@@ -1,5 +1,5 @@
 /* Background sinh động với gradient */
-.login-container {
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -10,7 +10,7 @@
 }
 
 /* Hiệu ứng background động */
-.login-container::before {
+.register-container::before {
   content: '';
   position: absolute;
   top: -50%;
@@ -33,7 +33,7 @@
 }
 
 /* Form với thiết kế hiện đại */
-.login-form {
+.register-form {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 2.5rem;
@@ -59,7 +59,7 @@
 }
 
 /* Header với icon */
-.login-form h2 {
+.register-form h2 {
   text-align: center;
   margin-bottom: 0.5rem;
   color: #333;
@@ -68,8 +68,8 @@
   position: relative;
 }
 
-.login-form h2::before {
-  content: '🎓';
+.register-form h2::before {
+  content: '✨';
   display: block;
   font-size: 3rem;
   margin-bottom: 0.5rem;
@@ -92,7 +92,7 @@
   }
 }
 
-.login-form p {
+.register-form p {
   text-align: center;
   margin-bottom: 2rem;
   color: #666;
@@ -212,44 +212,44 @@ button[type='submit']:disabled {
   box-shadow: none;
 }
 
-/* Login links */
-.login-links {
+/* Register links */
+.register-links {
   text-align: center;
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid #e1e5e9;
 }
 
-.login-links p {
+.register-links p {
   margin: 0;
   color: #666;
   font-size: 0.9rem;
 }
 
-.login-links a {
+.register-links a {
   color: #667eea;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
-.login-links a:hover {
+.register-links a:hover {
   color: #764ba2;
   text-decoration: underline;
 }
 
 /* Responsive design */
 @media (max-width: 480px) {
-  .login-form {
+  .register-form {
     margin: 1rem;
     padding: 2rem;
   }
 
-  .login-form h2 {
+  .register-form h2 {
     font-size: 1.8rem;
   }
 
-  .login-form h2::before {
+  .register-form h2::before {
     font-size: 2.5rem;
   }
 }

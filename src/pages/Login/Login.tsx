@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../../../firebase-config.ts'
 import './Login.css'
 
 interface LoginProps {
@@ -23,23 +25,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return
     }
 
-    // Kiểm tra tài khoản admin
-    if (username !== 'admin' || password !== 'admin') {
-      setError('Tài khoản hoặc mật khẩu không đúng.')
-      setLoading(false)
-      return
-    }
-
-    // Mock API call - thay thế bằng API thực tế
     try {
-      // Mock delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // Đăng nhập thành công với tài khoản admin
-      console.log('Đăng nhập thành công với tài khoản admin')
+      // Đăng nhập với Firebase Auth
+      await signInWithEmailAndPassword(auth, username, password)
+      console.log('Đăng nhập thành công')
       onLogin() // Chuyển sang dashboard
-    } catch {
-      setError('Lỗi kết nối. Vui lòng thử lại.')
+    } catch (error: unknown) {
+      console.error('Lỗi đăng nhập:', error)
+      const firebaseError = error as { code?: string }
+      if (firebaseError.code === 'auth/user-not-found') {
+        setError('Tài khoản không tồn tại.')
+      } else if (firebaseError.code === 'auth/wrong-password') {
+        setError('Mật khẩu không đúng.')
+      } else if (firebaseError.code === 'auth/invalid-email') {
+        setError('Email không hợp lệ.')
+      } else {
+        setError('Lỗi đăng nhập. Vui lòng thử lại.')
+      }
     } finally {
       setLoading(false)
     }
@@ -78,6 +80,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
           </button>
         </form>
+        <div className='login-links'>
+          <p>
+            Chưa có tài khoản? <a href='/register'>Đăng ký ngay</a>
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login/Login'
+import Register from './pages/Register/Register'
 import Dashboard from './pages/Dashboard/Dashboard'
 import './styles/App.css'
 
@@ -26,6 +27,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path='/register' element={isLoggedIn ? <Navigate to='/' /> : <Register />} />
         <Route path='/login' element={isLoggedIn ? <Navigate to='/' /> : <Login onLogin={handleLogin} />} />
         <Route path='/' element={isLoggedIn ? <Dashboard onLogout={handleLogout} /> : <Navigate to='/login' />} />
         {/* Redirect tất cả các route không hợp lệ về trang chủ */}
