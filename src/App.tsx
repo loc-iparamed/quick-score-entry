@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login/Login'
 import Register from './pages/Register/Register'
 import Dashboard from './pages/Dashboard/Dashboard'
-import './styles/App.css'
 
 function App() {
   // Khởi tạo trạng thái đăng nhập từ localStorage

@@ -1,7 +1,11 @@
 import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { GraduationCap, LogOut, Users, BookOpen, Calendar, TrendingUp } from 'lucide-react'
 import ClassList from '../../components/ClassList/ClassList'
 import StudentList from '../../components/StudentList/StudentList'
-import './Dashboard.css'
 
 interface Student {
   id: string
@@ -180,23 +184,128 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setSelectedClass(null)
   }
 
+  // Tính toán thống kê
+  const totalStudents = classes.reduce((total, cls) => total + cls.students.length, 0)
+  const totalClasses = classes.length
+  const averageGPA =
+    classes.reduce((sum, cls) => {
+      const classGPA = cls.students.reduce((total, student) => total + student.gpa, 0) / cls.students.length
+      return sum + classGPA
+    }, 0) / classes.length
+
   return (
-    <div className='dashboard'>
-      <header className='dashboard-header'>
-        <h1>🏫 Hệ thống quản lý sinh viên</h1>
-        <div className='user-info'>
-          <span>Chào mừng, Giảng viên</span>
-          <button className='logout-btn' onClick={onLogout}>
-            Đăng xuất
-          </button>
+    <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'>
+      {/* Header */}
+      <header className='bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-10'>
+        <div className='px-6 py-4'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center space-x-4'>
+              <div className='w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg'>
+                <GraduationCap className='w-7 h-7 text-white' />
+              </div>
+              <div>
+                <h1 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent'>
+                  Hệ thống quản lý sinh viên
+                </h1>
+                <p className='text-sm text-muted-foreground'>Quản lý lớp học và điểm số</p>
+              </div>
+            </div>
+
+            <div className='flex items-center space-x-4'>
+              <div className='text-right'>
+                <p className='text-sm font-medium text-slate-700'>Chào mừng, Giảng viên</p>
+                <p className='text-xs text-muted-foreground'>Hôm nay là ngày tốt lành</p>
+              </div>
+              <Button
+                onClick={onLogout}
+                variant='outline'
+                size='sm'
+                className='text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
+              >
+                <LogOut className='w-4 h-4 mr-2' />
+                Đăng xuất
+              </Button>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className='dashboard-content'>
+      <main className='p-6'>
         {!selectedClass ? (
-          <ClassList classes={classes} onClassSelect={handleClassSelect} />
+          <div className='space-y-6 animate-fade-in-up'>
+            {/* Stats Cards */}
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+              <Card className='p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover-lift animate-scale-in'>
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <p className='text-blue-100 text-sm font-medium'>Tổng số lớp</p>
+                    <p className='text-3xl font-bold'>{totalClasses}</p>
+                  </div>
+                  <BookOpen className='w-8 h-8 text-blue-200 animate-bounce-subtle' />
+                </div>
+              </Card>
+
+              <Card
+                className='p-6 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg hover-lift animate-scale-in'
+                style={{ animationDelay: '0.1s' }}
+              >
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <p className='text-emerald-100 text-sm font-medium'>Tổng sinh viên</p>
+                    <p className='text-3xl font-bold'>{totalStudents}</p>
+                  </div>
+                  <Users className='w-8 h-8 text-emerald-200 animate-bounce-subtle' />
+                </div>
+              </Card>
+
+              <Card
+                className='p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover-lift animate-scale-in'
+                style={{ animationDelay: '0.2s' }}
+              >
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <p className='text-purple-100 text-sm font-medium'>GPA trung bình</p>
+                    <p className='text-3xl font-bold'>{averageGPA.toFixed(1)}</p>
+                  </div>
+                  <TrendingUp className='w-8 h-8 text-purple-200 animate-bounce-subtle' />
+                </div>
+              </Card>
+            </div>
+
+            <Separator />
+
+            {/* Main Content */}
+            <div className='animate-slide-in-right'>
+              <div className='flex items-center justify-between mb-6'>
+                <div>
+                  <h2 className='text-2xl font-bold text-slate-800'>Danh sách lớp học</h2>
+                  <p className='text-muted-foreground'>Chọn lớp để xem danh sách sinh viên</p>
+                </div>
+                <Badge variant='secondary' className='px-3 py-1'>
+                  <Calendar className='w-4 h-4 mr-1' />
+                  Học kỳ 2024-1
+                </Badge>
+              </div>
+
+              <ClassList classes={classes} onClassSelect={handleClassSelect} />
+            </div>
+          </div>
         ) : (
-          <StudentList classInfo={selectedClass} onBack={handleBackToClasses} />
+          <div className='space-y-6'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <h2 className='text-2xl font-bold text-slate-800'>{selectedClass.name}</h2>
+                <p className='text-muted-foreground'>
+                  Mã môn: {selectedClass.subject} • Học kỳ: {selectedClass.semester}
+                </p>
+              </div>
+              <Button onClick={handleBackToClasses} variant='outline'>
+                ← Quay lại danh sách lớp
+              </Button>
+            </div>
+
+            <StudentList classInfo={selectedClass} onBack={handleBackToClasses} />
+          </div>
         )}
       </main>
     </div>

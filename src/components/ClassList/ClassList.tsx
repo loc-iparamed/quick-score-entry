@@ -1,4 +1,7 @@
 import React from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Users, BookOpen, Calendar, ChevronRight } from 'lucide-react'
 
 interface Student {
   id: string
@@ -26,21 +29,53 @@ interface ClassListProps {
 
 const ClassList: React.FC<ClassListProps> = ({ classes, onClassSelect }) => {
   return (
-    <div className='class-list'>
-      <h2>Danh sách lớp học</h2>
-      <div className='classes-grid'>
-        {classes.map(classItem => (
-          <div key={classItem.id} className='class-card' onClick={() => onClassSelect(classItem)}>
-            <div className='class-icon'>📚</div>
-            <h3>{classItem.name}</h3>
-            <p className='subject-code'>{classItem.subject}</p>
-            <p className='semester'>{classItem.semester}</p>
-            <div className='student-count'>
-              <span>{classItem.students.length} sinh viên</span>
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+      {classes.map((classItem, index) => (
+        <Card
+          key={classItem.id}
+          className='group hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-2 border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 hover-lift animate-scale-in'
+          style={{ animationDelay: `${index * 0.1}s` }}
+          onClick={() => onClassSelect(classItem)}
+        >
+          <CardHeader className='pb-3'>
+            <div className='flex items-center justify-between'>
+              <div className='w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow'>
+                <BookOpen className='w-6 h-6 text-white' />
+              </div>
+              <ChevronRight className='w-5 h-5 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-1 transition-all duration-200' />
             </div>
-          </div>
-        ))}
-      </div>
+            <CardTitle className='text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors'>
+              {classItem.name}
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className='space-y-4'>
+            <div className='flex items-center space-x-2 text-sm text-slate-600'>
+              <BookOpen className='w-4 h-4' />
+              <span className='font-medium'>{classItem.subject}</span>
+            </div>
+
+            <div className='flex items-center space-x-2 text-sm text-slate-600'>
+              <Calendar className='w-4 h-4' />
+              <span>{classItem.semester}</span>
+            </div>
+
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center space-x-2'>
+                <Users className='w-4 h-4 text-slate-500' />
+                <span className='text-sm text-slate-600'>{classItem.students.length} sinh viên</span>
+              </div>
+
+              <Badge
+                variant='secondary'
+                className='bg-blue-100 text-blue-700 hover:bg-blue-200 group-hover:bg-blue-200 transition-colors'
+              >
+                Xem chi tiết
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }
