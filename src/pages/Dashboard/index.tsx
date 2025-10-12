@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { GraduationCap, LogOut, Users, BookOpen, Calendar, Plus, Settings, ChevronDown, User } from 'lucide-react'
 import ClassList, { type DashboardClass } from '../../components/ClassList/ClassList'
+import SplashScreen from '../../components/SplashScreen'
 import { classService, studentService, userService, enrollmentService, examService } from '@/services/firestore'
 import type { Student } from '@/types'
 
@@ -21,6 +22,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [showSplashScreen, setShowSplashScreen] = useState(false)
+  const [splashTarget, setSplashTarget] = useState<string>('')
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -85,6 +88,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   const handleClassSelect = (classItem: DashboardClass) => {
     navigate(`/class/${classItem.id}`)
+  }
+
+  const handleNavigateWithSplash = (targetName: string) => {
+    setSplashTarget(targetName)
+    setShowSplashScreen(true)
+  }
+
+  const handleSplashComplete = () => {
+    setShowSplashScreen(false)
+    if (splashTarget === 'score-entry') {
+      navigate('/score-entry')
+    }
+    setSplashTarget('')
   }
 
   if (loading) {
@@ -201,7 +217,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </Card>
               </Link>
 
-              <Link to='/score-entry' className='group flex-1 ml-4'>
+              <button onClick={() => handleNavigateWithSplash('score-entry')} className='group flex-1 ml-4'>
                 <Card className='bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer'>
                   <Card className='bg-transparent border-0 shadow-none'>
                     <div className='p-4 text-center'>
@@ -213,7 +229,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </div>
                   </Card>
                 </Card>
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -259,6 +275,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         </div>
       </main>
+
+      {/* Splash Screen */}
+      {showSplashScreen && <SplashScreen onComplete={handleSplashComplete} targetPage={splashTarget} />}
     </div>
   )
 }
