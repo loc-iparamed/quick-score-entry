@@ -47,7 +47,6 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess }) => {
     try {
       // Tạo tài khoản mới với Firebase Auth
       await createUserWithEmailAndPassword(auth, email, password)
-      console.log('Đăng ký thành công')
       if (onRegisterSuccess) {
         onRegisterSuccess()
       }

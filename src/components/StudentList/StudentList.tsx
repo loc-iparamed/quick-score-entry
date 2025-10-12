@@ -2,41 +2,35 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Progress } from '@/components/ui/progress'
-import { ArrowLeft, Mail, Phone, GraduationCap, Users, TrendingUp, Edit, Eye, Star } from 'lucide-react'
-
-interface Student {
-  id: string
-  name: string
-  studentId: string
-  email: string
-  phone: string
-  major: string
-  gpa: number
-  status: 'active' | 'inactive'
-}
-
-interface Class {
-  id: string
-  name: string
-  subject: string
-  semester: string
-  students: Student[]
-}
+import { ArrowLeft, Mail, Users, BookOpen, Calendar } from 'lucide-react'
+import type { Student } from '@/types'
+import type { DashboardClass } from '@/components/ClassList/ClassList'
 
 interface StudentListProps {
-  classInfo: Class
+  classInfo: DashboardClass
+  students: Student[]
   onBack: () => void
 }
 
-const StudentList: React.FC<StudentListProps> = ({ classInfo, onBack }) => {
-  const getGpaBadgeVariant = (gpa: number) => {
-    if (gpa >= 3.5) return 'default' // green
-    if (gpa >= 3.0) return 'secondary' // yellow
-    return 'destructive' // red
+const StudentList: React.FC<StudentListProps> = ({ classInfo, students, onBack }) => {
+  const formatDate = (timestamp?: Student['createdAt']) => {
+    if (!timestamp) return '--'
+    try {
+      return timestamp.toDate().toLocaleDateString('vi-VN')
+    } catch (err) {
+      console.error(err)
+      return '--'
+    }
   }
+
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
 
   return (
     <div className='space-y-6 animate-fade-in-up'>
@@ -55,9 +49,7 @@ const StudentList: React.FC<StudentListProps> = ({ classInfo, onBack }) => {
             </Button>
             <div className='text-center'>
               <CardTitle className='text-2xl font-bold text-white'>{classInfo.name}</CardTitle>
-              <p className='text-blue-100 mt-1'>
-                {classInfo.subject} • {classInfo.semester}
-              </p>
+              <p className='text-blue-100 mt-1'>{classInfo.semester}</p>
             </div>
             <div className='w-20' /> {/* Spacer */}
           </div>
@@ -74,7 +66,7 @@ const StudentList: React.FC<StudentListProps> = ({ classInfo, onBack }) => {
               </div>
               <div>
                 <p className='text-sm text-muted-foreground'>Tổng sinh viên</p>
-                <p className='text-2xl font-bold text-slate-800'>{classInfo.students.length}</p>
+                <p className='text-2xl font-bold text-slate-800'>{students.length}</p>
               </div>
             </div>
           </CardContent>
@@ -84,13 +76,11 @@ const StudentList: React.FC<StudentListProps> = ({ classInfo, onBack }) => {
           <CardContent className='p-6'>
             <div className='flex items-center space-x-4'>
               <div className='w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center'>
-                <GraduationCap className='w-6 h-6 text-white' />
+                <BookOpen className='w-6 h-6 text-white' />
               </div>
               <div>
-                <p className='text-sm text-muted-foreground'>Đang học</p>
-                <p className='text-2xl font-bold text-slate-800'>
-                  {classInfo.students.filter(s => s.status === 'active').length}
-                </p>
+                <p className='text-sm text-muted-foreground'>Bài kiểm tra</p>
+                <p className='text-2xl font-bold text-slate-800'>{classInfo.examCount}</p>
               </div>
             </div>
           </CardContent>
@@ -100,13 +90,11 @@ const StudentList: React.FC<StudentListProps> = ({ classInfo, onBack }) => {
           <CardContent className='p-6'>
             <div className='flex items-center space-x-4'>
               <div className='w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center'>
-                <TrendingUp className='w-6 h-6 text-white' />
+                <Calendar className='w-6 h-6 text-white' />
               </div>
               <div>
-                <p className='text-sm text-muted-foreground'>GPA trung bình</p>
-                <p className='text-2xl font-bold text-slate-800'>
-                  {(classInfo.students.reduce((sum, s) => sum + s.gpa, 0) / classInfo.students.length).toFixed(2)}
-                </p>
+                <p className='text-sm text-muted-foreground'>Học kỳ</p>
+                <p className='text-2xl font-bold text-slate-800'>{classInfo.semester}</p>
               </div>
             </div>
           </CardContent>
@@ -123,72 +111,39 @@ const StudentList: React.FC<StudentListProps> = ({ classInfo, onBack }) => {
             <Table>
               <TableHeader>
                 <TableRow className='bg-slate-50'>
-                  <TableHead className='font-semibold'>Mã SV</TableHead>
+                  <TableHead className='font-semibold'>#</TableHead>
+                  <TableHead className='font-semibold'>MSSV</TableHead>
                   <TableHead className='font-semibold'>Họ tên</TableHead>
-                  <TableHead className='font-semibold'>Liên hệ</TableHead>
-                  <TableHead className='font-semibold'>Ngành học</TableHead>
-                  <TableHead className='font-semibold'>GPA</TableHead>
-                  <TableHead className='font-semibold'>Trạng thái</TableHead>
-                  <TableHead className='font-semibold'>Thao tác</TableHead>
+                  <TableHead className='font-semibold'>Email</TableHead>
+                  <TableHead className='font-semibold text-right'>Ngày tạo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {classInfo.students.map((student, index) => (
+                {students.map((student, index) => (
                   <TableRow
                     key={student.id}
                     className='hover:bg-slate-50 transition-colors duration-200 animate-fade-in-up'
                     style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                   >
-                    <TableCell className='font-medium'>{student.studentId}</TableCell>
+                    <TableCell className='font-medium'>{index + 1}</TableCell>
+                    <TableCell className='font-medium'>{student.mssv}</TableCell>
                     <TableCell>
                       <div className='flex items-center space-x-3'>
                         <Avatar className='h-8 w-8'>
                           <AvatarFallback className='bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs'>
-                            {student.name.charAt(0)}
+                            {getInitials(student.fullName)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className='font-medium'>{student.name}</span>
+                        <span className='font-medium'>{student.fullName}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className='space-y-1'>
-                        <div className='flex items-center space-x-2 text-sm'>
-                          <Mail className='w-3 h-3 text-slate-400' />
-                          <span className='text-slate-600'>{student.email}</span>
-                        </div>
-                        <div className='flex items-center space-x-2 text-sm'>
-                          <Phone className='w-3 h-3 text-slate-400' />
-                          <span className='text-slate-600'>{student.phone}</span>
-                        </div>
+                      <div className='flex items-center space-x-2 text-sm'>
+                        <Mail className='w-3 h-3 text-slate-400' />
+                        <span className='text-slate-600'>{student.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className='text-slate-600'>{student.major}</TableCell>
-                    <TableCell>
-                      <div className='space-y-2'>
-                        <Badge variant={getGpaBadgeVariant(student.gpa)} className='font-semibold text-xs'>
-                          {student.gpa.toFixed(1)} <Star className='w-3 h-3 ml-1 inline' />
-                        </Badge>
-                        <Progress value={(student.gpa / 4.0) * 100} className='h-1 w-16' />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={student.status === 'active' ? 'default' : 'secondary'}
-                        className={student.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}
-                      >
-                        {student.status === 'active' ? 'Đang học' : 'Nghỉ học'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex space-x-2'>
-                        <Button size='sm' variant='outline' className='h-8 w-8 p-0 hover-lift'>
-                          <Edit className='w-3 h-3' />
-                        </Button>
-                        <Button size='sm' variant='outline' className='h-8 w-8 p-0 hover-lift'>
-                          <Eye className='w-3 h-3' />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    <TableCell className='text-right text-slate-600'>{formatDate(student.createdAt)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

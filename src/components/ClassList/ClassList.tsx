@@ -1,30 +1,20 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, BookOpen, Calendar, ChevronRight } from 'lucide-react'
+import { Users, BookOpen, Calendar, ChevronRight, Award } from 'lucide-react'
 
-interface Student {
+export interface DashboardClass {
   id: string
   name: string
-  studentId: string
-  email: string
-  phone: string
-  major: string
-  gpa: number
-  status: 'active' | 'inactive'
-}
-
-interface Class {
-  id: string
-  name: string
-  subject: string
   semester: string
-  students: Student[]
+  studentCount: number
+  examCount: number
+  teacherName?: string
 }
 
 interface ClassListProps {
-  classes: Class[]
-  onClassSelect: (classItem: Class) => void
+  classes: DashboardClass[]
+  onClassSelect: (classItem: DashboardClass) => void
 }
 
 const ClassList: React.FC<ClassListProps> = ({ classes, onClassSelect }) => {
@@ -51,19 +41,21 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassSelect }) => {
 
           <CardContent className='space-y-4'>
             <div className='flex items-center space-x-2 text-sm text-slate-600'>
-              <BookOpen className='w-4 h-4' />
-              <span className='font-medium'>{classItem.subject}</span>
-            </div>
-
-            <div className='flex items-center space-x-2 text-sm text-slate-600'>
               <Calendar className='w-4 h-4' />
               <span>{classItem.semester}</span>
             </div>
 
+            {classItem.teacherName && (
+              <div className='flex items-center space-x-2 text-sm text-slate-600'>
+                <BookOpen className='w-4 h-4' />
+                <span>{classItem.teacherName}</span>
+              </div>
+            )}
+
             <div className='flex items-center justify-between'>
               <div className='flex items-center space-x-2'>
                 <Users className='w-4 h-4 text-slate-500' />
-                <span className='text-sm text-slate-600'>{classItem.students.length} sinh viên</span>
+                <span className='text-sm text-slate-600'>{classItem.studentCount} sinh viên</span>
               </div>
 
               <Badge
@@ -72,6 +64,13 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassSelect }) => {
               >
                 Xem chi tiết
               </Badge>
+            </div>
+
+            <div className='flex items-center justify-between text-sm text-slate-600'>
+              <div className='flex items-center space-x-2'>
+                <Award className='w-4 h-4 text-slate-500' />
+                <span>{classItem.examCount} bài kiểm tra</span>
+              </div>
             </div>
           </CardContent>
         </Card>

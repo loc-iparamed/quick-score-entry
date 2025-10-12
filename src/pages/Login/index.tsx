@@ -24,7 +24,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('')
     setLoading(true)
 
-    // Validation cơ bản
     if (!username || !password) {
       setError('Vui lòng nhập tài khoản và mật khẩu.')
       setLoading(false)
@@ -32,10 +31,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
 
     try {
-      // Đăng nhập với Firebase Auth
       await signInWithEmailAndPassword(auth, username, password)
-      console.log('Đăng nhập thành công')
-      // Chuyển sang dashboard
+      onLogin()
     } catch (error: unknown) {
       console.error('Lỗi đăng nhập:', error)
       const firebaseError = error as { code?: string }
@@ -48,7 +45,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       } else {
         setError('Lỗi đăng nhập. Vui lòng thử lại.')
       }
-      onLogin()
     } finally {
       setLoading(false)
     }

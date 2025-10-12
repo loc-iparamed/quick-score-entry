@@ -1,20 +1,61 @@
-# Quick Score Entry# Quick Score Entry - Ứng dụng Quản lý Sinh viên# React + TypeScript + Vite
+# Quick Score Entry - Ứng dụng Quản lý Sinh viên
 
-Ứng dụng quản lý sinh viên cho giảng viên.
+Ứng dụng web hiện đại giúp giảng viên quản lý và theo dõi thông tin sinh viên trong các lớp học.
 
-## 🚀 ChạyỨng dụng web hiện đại giúp giảng viên quản lý và theo dõi thông tin sinh viên trong các lớp học.This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🚀 Cài đặt và Chạy
+
+### 1. Clone repository
 
 ```bash
+git clone <repository-url>
+cd quick-score-entry
+```
 
+### 2. Cài đặt dependencies
+
+```bash
 npm install
+```
 
-npm run dev## ✨ Tính năngCurrently, two official plugins are available:
+### 3. Cấu hình Firebase
 
+```bash
+# Copy file cấu hình mẫu
+cp .env.example .env
+
+# Chỉnh sửa .env với thông tin Firebase của bạn
+# Tham khảo Firebase Console để lấy các giá trị
+```
+
+### 4. Chạy ứng dụng
+
+```bash
+npm run dev
 ```
 
 Truy cập: `http://localhost:5173`
 
-- 🔐 **Đăng nhập bảo mật**: Xác thực tài khoản giảng viên- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+## 🔧 Cấu hình Environment
+
+Tạo file `.env` trong thư mục gốc với các biến sau:
+
+```env
+# Firebase Configuration
+FIREBASE_API_KEY=your_api_key_here
+FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=your_app_id
+FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+## ✨ Tính năng
+
+- 🔐 **Đăng nhập bảo mật**: Xác thực tài khoản giảng viên
+- 👥 **Quản lý sinh viên**: Thêm, sửa, xóa thông tin sinh viên
+- 📊 **Thống kê**: Xem báo cáo tổng quan về lớp học
+- 🎯 **Nhập điểm**: Ghi điểm nhanh và chính xác
 
 ## 🔑 Đăng nhập
 

@@ -36,7 +36,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       await new Promise(resolve => setTimeout(resolve, 1000))
 
       // Đăng nhập thành công với tài khoản admin
-      console.log('Đăng nhập thành công với tài khoản admin')
       onLogin() // Chuyển sang dashboard
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.')
