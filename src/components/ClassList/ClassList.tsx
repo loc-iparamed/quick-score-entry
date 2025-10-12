@@ -20,11 +20,10 @@ interface ClassListProps {
 const ClassList: React.FC<ClassListProps> = ({ classes, onClassSelect }) => {
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-      {classes.map((classItem, index) => (
+      {classes.map(classItem => (
         <Card
           key={classItem.id}
-          className='group hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-2 border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 hover-lift animate-scale-in'
-          style={{ animationDelay: `${index * 0.1}s` }}
+          className='group hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-2 border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 hover-lift'
           onClick={() => onClassSelect(classItem)}
         >
           <CardHeader className='pb-3'>
@@ -45,12 +44,12 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassSelect }) => {
               <span>{classItem.semester}</span>
             </div>
 
-            {classItem.teacherName && (
+            {/* {classItem.teacherName && (
               <div className='flex items-center space-x-2 text-sm text-slate-600'>
                 <BookOpen className='w-4 h-4' />
                 <span>{classItem.teacherName}</span>
               </div>
-            )}
+            )} */}
 
             <div className='flex items-center justify-between'>
               <div className='flex items-center space-x-2'>

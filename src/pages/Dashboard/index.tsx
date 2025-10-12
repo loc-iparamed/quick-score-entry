@@ -1,15 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { GraduationCap, LogOut, Users, BookOpen, Calendar, Plus, Settings, ChevronDown, User } from 'lucide-react'
 import ClassList, { type DashboardClass } from '../../components/ClassList/ClassList'
-import StudentList from '../../components/StudentList/StudentList'
-import { classService, studentService, userService } from '@/services/firestore'
+import { classService, studentService, userService, enrollmentService, examService } from '@/services/firestore'
 import type { Student } from '@/types'
 
 interface DashboardProps {
@@ -17,9 +15,9 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+  const navigate = useNavigate()
   const [classes, setClasses] = useState<DashboardClass[]>([])
   const [students, setStudents] = useState<Student[]>([])
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -30,10 +28,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setLoading(true)
         setError(null)
 
-        const [classesData, studentsData, teachersData] = await Promise.all([
+        const [classesData, studentsData, teachersData, enrollmentsData, examsData] = await Promise.all([
           classService.getAll(),
           studentService.getAll(),
           userService.getAll(),
+          enrollmentService.getAll(),
+          examService.getAll(),
         ])
 
         const teacherMap = new Map<string, string>()
@@ -41,14 +41,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           teacherMap.set(teacher.id, teacher.fullName)
         })
 
-        const mappedClasses: DashboardClass[] = classesData.map(cls => ({
-          id: cls.id,
-          name: cls.name,
-          semester: cls.semester,
-          studentCount: cls.studentCount,
-          examCount: cls.examCount,
-          teacherName: teacherMap.get(cls.teacherId),
-        }))
+        const mappedClasses: DashboardClass[] = classesData.map(cls => {
+          const classEnrollments = enrollmentsData.filter(e => e.classId === cls.id)
+          const studentCount = classEnrollments.length
+
+          const classExams = examsData.filter(exam => exam.classId === cls.id)
+          const examCount = classExams.length
+
+          return {
+            id: cls.id,
+            name: cls.name,
+            semester: cls.semester,
+            studentCount,
+            examCount,
+            teacherName: teacherMap.get(cls.teacherId),
+          }
+        })
 
         setClasses(mappedClasses)
         setStudents(studentsData)
@@ -63,32 +71,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     loadDashboard()
   }, [])
 
-  const selectedClass = useMemo(
-    () => (selectedClassId ? (classes.find(cls => cls.id === selectedClassId) ?? null) : null),
-    [classes, selectedClassId],
-  )
-
-  useEffect(() => {
-    if (selectedClassId && !classes.some(cls => cls.id === selectedClassId)) {
-      setSelectedClassId(null)
-    }
-  }, [classes, selectedClassId])
-
-  const selectedClassStudents = useMemo(() => {
-    if (!selectedClass) return []
-    return students.filter(student => student.className === selectedClass.name)
-  }, [selectedClass, students])
-
   const totalStudents = students.length
   const totalClasses = classes.length
   const semesterCount = useMemo(() => new Set(classes.map(cls => cls.semester)).size, [classes])
 
   const handleClassSelect = (classItem: DashboardClass) => {
-    setSelectedClassId(classItem.id)
-  }
-
-  const handleBackToClasses = () => {
-    setSelectedClassId(null)
+    navigate(`/class/${classItem.id}`)
   }
 
   if (loading) {
@@ -101,7 +89,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'>
-      {/* Header */}
       <header className='bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-10'>
         <div className='px-6 py-4'>
           <div className='flex items-center justify-between'>
@@ -118,14 +105,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
 
             <div className='flex items-center space-x-4'>
-              {/* User Menu Dropdown */}
               <div className='relative'>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className='flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 transition-colors duration-200 border border-slate-200'
                 >
                   <Avatar className='h-10 w-10'>
-                    <AvatarImage src='' />
                     <AvatarFallback className='bg-gradient-to-br from-blue-500 to-indigo-600 text-white'>
                       <User className='h-6 w-6' />
                     </AvatarFallback>
@@ -190,103 +175,81 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         )}
 
-        {!selectedClass ? (
-          <div className='space-y-6 animate-fade-in-up'>
-            {/* Quick Actions */}
-            <div className='bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-xl p-6 shadow-xl'>
-              <div className='flex items-center justify-between max-w-4xl mx-auto'>
-                <Link to='/students' className='group flex-1 mr-4'>
-                  <Card className='bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer'>
-                    <Card className='bg-transparent border-0 shadow-none'>
-                      <div className='p-4 text-center'>
-                        <div className='w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg'>
-                          <Users className='w-6 h-6 text-white' />
-                        </div>
-                        <h3 className='text-lg font-bold text-white mb-1'>Quản lý sinh viên</h3>
-                        <p className='text-sm text-blue-100'>Thêm, sửa, xóa thông tin</p>
+        <div className='space-y-6'>
+          {/* Quick Actions */}
+          <div className='bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-xl p-6 shadow-xl'>
+            <div className='flex items-center justify-between max-w-4xl mx-auto'>
+              <Link to='/students' className='group flex-1 mr-4'>
+                <Card className='bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer'>
+                  <Card className='bg-transparent border-0 shadow-none'>
+                    <div className='p-4 text-center'>
+                      <div className='w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg'>
+                        <Users className='w-6 h-6 text-white' />
                       </div>
-                    </Card>
+                      <h3 className='text-lg font-bold text-white mb-1'>Quản lý sinh viên</h3>
+                      <p className='text-sm text-blue-100'>Thêm, sửa, xóa thông tin</p>
+                    </div>
                   </Card>
-                </Link>
+                </Card>
+              </Link>
 
-                <Link to='/score-entry' className='group flex-1 ml-4'>
-                  <Card className='bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer'>
-                    <Card className='bg-transparent border-0 shadow-none'>
-                      <div className='p-4 text-center'>
-                        <div className='w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg'>
-                          <Plus className='w-6 h-6 text-white' />
-                        </div>
-                        <h3 className='text-lg font-bold text-white mb-1'>Nhập điểm</h3>
-                        <p className='text-sm text-blue-100'>Nhập và quản lý điểm số</p>
+              <Link to='/score-entry' className='group flex-1 ml-4'>
+                <Card className='bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer'>
+                  <Card className='bg-transparent border-0 shadow-none'>
+                    <div className='p-4 text-center'>
+                      <div className='w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg'>
+                        <Plus className='w-6 h-6 text-white' />
                       </div>
-                    </Card>
+                      <h3 className='text-lg font-bold text-white mb-1'>Nhập điểm</h3>
+                      <p className='text-sm text-blue-100'>Nhập và quản lý điểm số</p>
+                    </div>
                   </Card>
-                </Link>
-              </div>
+                </Card>
+              </Link>
             </div>
+          </div>
 
-            {/* Stats Cards */}
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
-              <Card className='p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover-lift animate-scale-in'>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <p className='text-blue-100 text-sm font-medium'>Tổng số lớp</p>
-                    <p className='text-3xl font-bold'>{totalClasses}</p>
-                  </div>
-                  <BookOpen className='w-8 h-8 text-blue-200 animate-bounce-subtle' />
-                </div>
-              </Card>
-
-              <Card
-                className='p-6 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg hover-lift animate-scale-in'
-                style={{ animationDelay: '0.1s' }}
-              >
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <p className='text-emerald-100 text-sm font-medium'>Tổng sinh viên</p>
-                    <p className='text-3xl font-bold'>{totalStudents}</p>
-                  </div>
-                  <Users className='w-8 h-8 text-emerald-200 animate-bounce-subtle' />
-                </div>
-              </Card>
-            </div>
-
-            <Separator />
-
-            {/* Main Content */}
-            <div className='animate-slide-in-right'>
-              <div className='flex items-center justify-between mb-6'>
+          {/* Stats Cards */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
+            <Card className='p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover-lift'>
+              <div className='flex items-center justify-between'>
                 <div>
-                  <h2 className='text-2xl font-bold text-slate-800'>Danh sách lớp học</h2>
-                  <p className='text-muted-foreground'>Chọn lớp để xem danh sách sinh viên</p>
+                  <p className='text-blue-100 text-sm font-medium'>Tổng số lớp</p>
+                  <p className='text-3xl font-bold'>{totalClasses}</p>
                 </div>
-                <Badge variant='secondary' className='px-3 py-1'>
-                  <Calendar className='w-4 h-4 mr-1' />
-                  {semesterCount > 0 ? `${semesterCount} học kỳ` : 'Chưa có học kỳ'}
-                </Badge>
+                <BookOpen className='w-8 h-8 text-blue-200' />
               </div>
+            </Card>
 
-              <ClassList classes={classes} onClassSelect={handleClassSelect} />
-            </div>
+            <Card className='p-6 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg hover-lift'>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='text-emerald-100 text-sm font-medium'>Tổng sinh viên</p>
+                  <p className='text-3xl font-bold'>{totalStudents}</p>
+                </div>
+                <Users className='w-8 h-8 text-emerald-200' />
+              </div>
+            </Card>
           </div>
-        ) : (
-          <div className='space-y-6'>
-            <div className='flex items-center justify-between'>
+
+          <Separator />
+
+          {/* Main Content */}
+          <div>
+            <div className='flex items-center justify-between mb-6'>
               <div>
-                <h2 className='text-2xl font-bold text-slate-800'>{selectedClass.name}</h2>
-                <p className='text-muted-foreground'>Học kỳ: {selectedClass.semester}</p>
-                {selectedClass.teacherName && (
-                  <p className='text-muted-foreground'>Giảng viên: {selectedClass.teacherName}</p>
-                )}
+                <h2 className='text-2xl font-bold text-slate-800'>Danh sách lớp học</h2>
+                <p className='text-muted-foreground'>Chọn lớp để xem danh sách sinh viên</p>
               </div>
-              <Button onClick={handleBackToClasses} variant='outline'>
-                ← Quay lại danh sách lớp
-              </Button>
+              <Badge variant='secondary' className='px-3 py-1'>
+                <Calendar className='w-4 h-4 mr-1' />
+                {semesterCount > 0 ? `${semesterCount} học kỳ` : 'Chưa có học kỳ'}
+              </Badge>
             </div>
 
-            <StudentList classInfo={selectedClass} students={selectedClassStudents} onBack={handleBackToClasses} />
+            <ClassList classes={classes} onClassSelect={handleClassSelect} />
           </div>
-        )}
+        </div>
       </main>
     </div>
   )

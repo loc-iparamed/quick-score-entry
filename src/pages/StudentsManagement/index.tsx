@@ -31,7 +31,6 @@ const StudentsManagement: React.FC = () => {
   const [formData, setFormData] = useState<CreateStudentData>({
     mssv: '',
     fullName: '',
-    className: '',
   })
 
   const loadStudents = async () => {
@@ -84,12 +83,8 @@ const StudentsManagement: React.FC = () => {
     student =>
       student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.mssv.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.className.toLowerCase().includes(searchTerm.toLowerCase()),
+      student.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
-
-  // Get unique classes for statistics
-  const uniqueClasses = Array.from(new Set(students.map(s => s.className))).length
 
   // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,7 +132,6 @@ const StudentsManagement: React.FC = () => {
     setFormData({
       mssv: student.mssv,
       fullName: student.fullName,
-      className: student.className,
     })
     setIsDialogOpen(true)
   }
@@ -159,7 +153,7 @@ const StudentsManagement: React.FC = () => {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ mssv: '', fullName: '', className: '' })
+    setFormData({ mssv: '', fullName: '' })
     setEditingStudent(null)
     setError(null)
   }
@@ -213,7 +207,7 @@ const StudentsManagement: React.FC = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-8'>
           <Card className='bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300'>
             <CardContent className='p-6'>
               <div className='flex items-center justify-between'>
@@ -223,19 +217,6 @@ const StudentsManagement: React.FC = () => {
                   <p className='text-purple-200 text-xs mt-1'>Đang học tập</p>
                 </div>
                 <GraduationCap className='w-12 h-12 text-purple-200' />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className='bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300'>
-            <CardContent className='p-6'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p className='text-pink-100 text-sm font-medium'>Số lớp</p>
-                  <p className='text-3xl font-bold'>{uniqueClasses}</p>
-                  <p className='text-pink-200 text-xs mt-1'>Đang hoạt động</p>
-                </div>
-                <Users className='w-12 h-12 text-pink-200' />
               </div>
             </CardContent>
           </Card>
@@ -312,14 +293,13 @@ const StudentsManagement: React.FC = () => {
                         <div>
                           <p className='font-semibold text-purple-900'>{formData.fullName || 'Tên sinh viên'}</p>
                           <p className='text-sm text-purple-600'>{formData.mssv || 'MSSV'}</p>
-                          <p className='text-sm text-purple-600'>{formData.className || 'Lớp'}</p>
                         </div>
                       </div>
                     )}
                   </DialogHeader>
 
                   <div className='space-y-6 py-4'>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <div className='grid grid-cols-1 gap-6'>
                       <div className='space-y-3'>
                         <Label htmlFor='mssv' className='text-sm font-semibold text-purple-900 flex items-center gap-2'>
                           <Hash className='h-4 w-4' />
@@ -335,24 +315,6 @@ const StudentsManagement: React.FC = () => {
                           className='border-purple-200 focus:border-purple-400 focus:ring-purple-400 transition-all duration-200'
                         />
                         {editingStudent && <p className='text-xs text-muted-foreground'>Không thể thay đổi MSSV</p>}
-                      </div>
-
-                      <div className='space-y-3'>
-                        <Label
-                          htmlFor='className'
-                          className='text-sm font-semibold text-purple-900 flex items-center gap-2'
-                        >
-                          <GraduationCap className='h-4 w-4' />
-                          Lớp
-                        </Label>
-                        <Input
-                          id='className'
-                          value={formData.className}
-                          onChange={e => setFormData({ ...formData, className: e.target.value })}
-                          placeholder='Ví dụ: SE01'
-                          required
-                          className='border-purple-200 focus:border-purple-400 focus:ring-purple-400 transition-all duration-200'
-                        />
                       </div>
                     </div>
 
@@ -414,7 +376,6 @@ const StudentsManagement: React.FC = () => {
                 <TableHead>Sinh viên</TableHead>
                 <TableHead>MSSV</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Lớp</TableHead>
                 <TableHead>Ngày tạo</TableHead>
                 <TableHead className='text-right'>Thao tác</TableHead>
               </TableRow>
@@ -463,11 +424,6 @@ const StudentsManagement: React.FC = () => {
                         <Mail className='h-4 w-4 text-muted-foreground' />
                         {student.email}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant='outline' className='bg-purple-50 text-purple-700 border-purple-200'>
-                        {student.className}
-                      </Badge>
                     </TableCell>
                     <TableCell className='text-muted-foreground'>{getCreationDate(student)}</TableCell>
                     <TableCell className='text-right'>

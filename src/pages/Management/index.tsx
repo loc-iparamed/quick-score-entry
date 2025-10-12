@@ -33,14 +33,15 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { userService, classService, studentService } from '@/services/firestore'
-import type { User, Class, Student, CreateUserData, CreateClassData, CreateStudentData } from '@/types'
+import { userService, classService, studentService, enrollmentService } from '@/services/firestore'
+import type { User, Class, Student, CreateUserData, CreateClassData, CreateStudentData, Enrollment } from '@/types'
 
 const Management: React.FC = () => {
   // State for all entities
   const [teachers, setTeachers] = useState<User[]>([])
   const [classes, setClasses] = useState<Class[]>([])
   const [students, setStudents] = useState<Student[]>([])
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -52,6 +53,8 @@ const Management: React.FC = () => {
   const [editingClass, setEditingClass] = useState<Class | null>(null)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [currentTab, setCurrentTab] = useState('teachers')
+  const [selectedClassForEnrollment, setSelectedClassForEnrollment] = useState<Class | null>(null)
+  const [selectedStudentForEnrollment, setSelectedStudentForEnrollment] = useState<Student | null>(null)
 
   // Form data states
   const [teacherFormData, setTeacherFormData] = useState<CreateUserData>({
@@ -69,21 +72,22 @@ const Management: React.FC = () => {
   const [studentFormData, setStudentFormData] = useState<CreateStudentData>({
     mssv: '',
     fullName: '',
-    className: '',
   })
 
   // Load all data
   const loadAllData = async () => {
     try {
       setLoading(true)
-      const [teachersData, classesData, studentsData] = await Promise.all([
+      const [teachersData, classesData, studentsData, enrollmentsData] = await Promise.all([
         userService.getAll(),
         classService.getAll(),
         studentService.getAll(),
+        enrollmentService.getAll(),
       ])
       setTeachers(teachersData)
       setClasses(classesData)
       setStudents(studentsData)
+      setEnrollments(enrollmentsData)
     } catch (err) {
       setError('Không thể tải dữ liệu')
       console.error(err)
@@ -100,6 +104,27 @@ const Management: React.FC = () => {
   const getTeacherName = (teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId)
     return teacher ? teacher.fullName : 'Không rõ'
+  }
+
+  // Get enrolled students for a class
+  const getEnrolledStudents = (classId: string) => {
+    return enrollments
+      .filter(e => e.classId === classId)
+      .map(e => students.find(s => s.id === e.studentId))
+      .filter(Boolean) as Student[]
+  }
+
+  // Get enrolled classes for a student
+  const getEnrolledClasses = (studentId: string) => {
+    return enrollments
+      .filter(e => e.studentId === studentId)
+      .map(e => classes.find(c => c.id === e.classId))
+      .filter(Boolean) as Class[]
+  }
+
+  // Check if student is enrolled in class
+  const isStudentEnrolled = (studentId: string, classId: string) => {
+    return enrollments.some(e => e.studentId === studentId && e.classId === classId)
   }
 
   // Get initials for avatar
@@ -130,8 +155,7 @@ const Management: React.FC = () => {
     student =>
       student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.mssv.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.className.toLowerCase().includes(searchTerm.toLowerCase()),
+      student.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   // Handle form submits
@@ -234,7 +258,6 @@ const Management: React.FC = () => {
     setStudentFormData({
       mssv: student.mssv,
       fullName: student.fullName,
-      className: student.className,
     })
     setCurrentTab('students')
     setIsDialogOpen(true)
@@ -286,7 +309,7 @@ const Management: React.FC = () => {
   }
 
   const resetStudentForm = () => {
-    setStudentFormData({ mssv: '', fullName: '', className: '' })
+    setStudentFormData({ mssv: '', fullName: '' })
     setEditingStudent(null)
   }
 
@@ -296,6 +319,29 @@ const Management: React.FC = () => {
     resetTeacherForm()
     resetClassForm()
     resetStudentForm()
+  }
+
+  // Handle enrollment operations
+  const handleEnrollStudent = async (studentId: string, classId: string) => {
+    try {
+      await enrollmentService.create({ studentId, classId })
+      await loadAllData()
+      setError(null)
+    } catch (err) {
+      setError('Không thể thêm sinh viên vào lớp')
+      console.error(err)
+    }
+  }
+
+  const handleUnenrollStudent = async (enrollmentId: string) => {
+    try {
+      await enrollmentService.delete(enrollmentId)
+      await loadAllData()
+      setError(null)
+    } catch (err) {
+      setError('Không thể xóa sinh viên khỏi lớp')
+      console.error(err)
+    }
   }
 
   // Get unique semesters for filter
@@ -748,6 +794,15 @@ const Management: React.FC = () => {
                             <Button
                               variant='outline'
                               size='sm'
+                              onClick={() => setSelectedClassForEnrollment(classItem)}
+                              className='hover:bg-emerald-50'
+                            >
+                              <Users className='h-4 w-4 mr-1' />
+                              Sinh viên
+                            </Button>
+                            <Button
+                              variant='outline'
+                              size='sm'
                               onClick={() => handleEditClass(classItem)}
                               className='hover:bg-emerald-50'
                             >
@@ -766,6 +821,102 @@ const Management: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Enrollment Dialog for Classes */}
+        <Dialog open={!!selectedClassForEnrollment} onOpenChange={() => setSelectedClassForEnrollment(null)}>
+          <DialogContent className='sm:max-w-2xl max-h-[80vh] overflow-y-auto'>
+            <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                <Users className='h-5 w-5' />
+                Quản lý sinh viên - {selectedClassForEnrollment?.name}
+              </DialogTitle>
+              <DialogDescription>Thêm hoặc xóa sinh viên khỏi lớp học</DialogDescription>
+            </DialogHeader>
+
+            <div className='space-y-4'>
+              {/* Enrolled Students */}
+              <div>
+                <h4 className='text-sm font-medium text-slate-700 mb-2'>
+                  Sinh viên đã đăng ký ({getEnrolledStudents(selectedClassForEnrollment?.id || '').length})
+                </h4>
+                <div className='space-y-2 max-h-40 overflow-y-auto'>
+                  {getEnrolledStudents(selectedClassForEnrollment?.id || '').map(student => {
+                    const enrollment = enrollments.find(
+                      e => e.studentId === student.id && e.classId === selectedClassForEnrollment?.id,
+                    )
+                    return (
+                      <div key={student.id} className='flex items-center justify-between p-2 bg-slate-50 rounded-lg'>
+                        <div className='flex items-center gap-3'>
+                          <Avatar className='h-8 w-8'>
+                            <AvatarFallback className='bg-blue-100 text-blue-700 text-xs'>
+                              {getInitials(student.fullName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className='font-medium text-sm'>{student.fullName}</p>
+                            <p className='text-xs text-muted-foreground'>{student.mssv}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => enrollment && handleUnenrollStudent(enrollment.id)}
+                          className='text-red-600 hover:text-red-700 hover:bg-red-50'
+                        >
+                          <Trash2 className='h-4 w-4' />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                  {getEnrolledStudents(selectedClassForEnrollment?.id || '').length === 0 && (
+                    <p className='text-sm text-muted-foreground text-center py-4'>Chưa có sinh viên nào</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Add Student */}
+              <div>
+                <h4 className='text-sm font-medium text-slate-700 mb-2'>Thêm sinh viên</h4>
+                <div className='space-y-2'>
+                  {students
+                    .filter(student => !isStudentEnrolled(student.id, selectedClassForEnrollment?.id || ''))
+                    .map(student => (
+                      <div key={student.id} className='flex items-center justify-between p-2 border rounded-lg'>
+                        <div className='flex items-center gap-3'>
+                          <Avatar className='h-8 w-8'>
+                            <AvatarFallback className='bg-green-100 text-green-700 text-xs'>
+                              {getInitials(student.fullName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className='font-medium text-sm'>{student.fullName}</p>
+                            <p className='text-xs text-muted-foreground'>{student.mssv}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handleEnrollStudent(student.id, selectedClassForEnrollment?.id || '')}
+                          className='text-green-600 hover:text-green-700 hover:bg-green-50'
+                        >
+                          <Plus className='h-4 w-4 mr-1' />
+                          Thêm
+                        </Button>
+                      </div>
+                    ))}
+                  {students.filter(student => !isStudentEnrolled(student.id, selectedClassForEnrollment?.id || ''))
+                    .length === 0 && (
+                    <p className='text-sm text-muted-foreground text-center py-4'>Tất cả sinh viên đã được thêm</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setSelectedClassForEnrollment(null)}>Đóng</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Students Tab */}
         <TabsContent value='students' className='space-y-6'>
@@ -829,17 +980,6 @@ const Management: React.FC = () => {
                             required
                           />
                         </div>
-
-                        <div className='space-y-2'>
-                          <Label htmlFor='student-className'>Lớp</Label>
-                          <Input
-                            id='student-className'
-                            value={studentFormData.className}
-                            onChange={e => setStudentFormData({ ...studentFormData, className: e.target.value })}
-                            placeholder='Ví dụ: SE01'
-                            required
-                          />
-                        </div>
                       </div>
 
                       <DialogFooter>
@@ -863,7 +1003,6 @@ const Management: React.FC = () => {
                     <TableHead>Sinh viên</TableHead>
                     <TableHead>MSSV</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Lớp</TableHead>
                     <TableHead>Ngày tạo</TableHead>
                     <TableHead className='text-right'>Thao tác</TableHead>
                   </TableRow>
@@ -871,7 +1010,7 @@ const Management: React.FC = () => {
                 <TableBody>
                   {filteredStudents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className='text-center py-12'>
+                      <TableCell colSpan={5} className='text-center py-12'>
                         <div className='text-muted-foreground'>
                           <GraduationCap className='h-16 w-16 mx-auto mb-4 opacity-20' />
                           <p className='text-lg font-medium'>Chưa có sinh viên nào</p>
@@ -909,16 +1048,20 @@ const Management: React.FC = () => {
                             {student.email}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant='outline' className='bg-purple-50 text-purple-700 border-purple-200'>
-                            {student.className}
-                          </Badge>
-                        </TableCell>
                         <TableCell className='text-muted-foreground'>
                           {student.createdAt.toDate().toLocaleDateString('vi-VN')}
                         </TableCell>
                         <TableCell className='text-right'>
                           <div className='flex items-center justify-end gap-2'>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              onClick={() => setSelectedStudentForEnrollment(student)}
+                              className='hover:bg-purple-50'
+                            >
+                              <BookOpen className='h-4 w-4 mr-1' />
+                              Lớp học
+                            </Button>
                             <Button
                               variant='outline'
                               size='sm'
@@ -940,6 +1083,104 @@ const Management: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Enrollment Dialog for Students */}
+        <Dialog open={!!selectedStudentForEnrollment} onOpenChange={() => setSelectedStudentForEnrollment(null)}>
+          <DialogContent className='sm:max-w-2xl max-h-[80vh] overflow-y-auto'>
+            <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                <BookOpen className='h-5 w-5' />
+                Quản lý lớp học - {selectedStudentForEnrollment?.fullName}
+              </DialogTitle>
+              <DialogDescription>Thêm hoặc xóa sinh viên khỏi các lớp học</DialogDescription>
+            </DialogHeader>
+
+            <div className='space-y-4'>
+              {/* Enrolled Classes */}
+              <div>
+                <h4 className='text-sm font-medium text-slate-700 mb-2'>
+                  Lớp học đã đăng ký ({getEnrolledClasses(selectedStudentForEnrollment?.id || '').length})
+                </h4>
+                <div className='space-y-2 max-h-40 overflow-y-auto'>
+                  {getEnrolledClasses(selectedStudentForEnrollment?.id || '').map(classItem => {
+                    const enrollment = enrollments.find(
+                      e => e.studentId === selectedStudentForEnrollment?.id && e.classId === classItem.id,
+                    )
+                    return (
+                      <div key={classItem.id} className='flex items-center justify-between p-2 bg-slate-50 rounded-lg'>
+                        <div className='flex items-center gap-3'>
+                          <div className='w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center'>
+                            <BookOpen className='h-4 w-4 text-emerald-600' />
+                          </div>
+                          <div>
+                            <p className='font-medium text-sm'>{classItem.name}</p>
+                            <p className='text-xs text-muted-foreground'>
+                              {classItem.semester} - {getTeacherName(classItem.teacherId)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => enrollment && handleUnenrollStudent(enrollment.id)}
+                          className='text-red-600 hover:text-red-700 hover:bg-red-50'
+                        >
+                          <Trash2 className='h-4 w-4' />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                  {getEnrolledClasses(selectedStudentForEnrollment?.id || '').length === 0 && (
+                    <p className='text-sm text-muted-foreground text-center py-4'>Chưa đăng ký lớp học nào</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Add to Class */}
+              <div>
+                <h4 className='text-sm font-medium text-slate-700 mb-2'>Thêm vào lớp học</h4>
+                <div className='space-y-2'>
+                  {classes
+                    .filter(classItem => !isStudentEnrolled(selectedStudentForEnrollment?.id || '', classItem.id))
+                    .map(classItem => (
+                      <div key={classItem.id} className='flex items-center justify-between p-2 border rounded-lg'>
+                        <div className='flex items-center gap-3'>
+                          <div className='w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center'>
+                            <BookOpen className='h-4 w-4 text-blue-600' />
+                          </div>
+                          <div>
+                            <p className='font-medium text-sm'>{classItem.name}</p>
+                            <p className='text-xs text-muted-foreground'>
+                              {classItem.semester} - {getTeacherName(classItem.teacherId)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handleEnrollStudent(selectedStudentForEnrollment?.id || '', classItem.id)}
+                          className='text-green-600 hover:text-green-700 hover:bg-green-50'
+                        >
+                          <Plus className='h-4 w-4 mr-1' />
+                          Thêm
+                        </Button>
+                      </div>
+                    ))}
+                  {classes.filter(classItem => !isStudentEnrolled(selectedStudentForEnrollment?.id || '', classItem.id))
+                    .length === 0 && (
+                    <p className='text-sm text-muted-foreground text-center py-4'>
+                      Sinh viên đã đăng ký tất cả lớp học
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setSelectedStudentForEnrollment(null)}>Đóng</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Tabs>
     </div>
   )

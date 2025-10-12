@@ -26,7 +26,6 @@ export interface Student {
   mssv: string
   fullName: string
   email: string
-  className: string
   createdAt: Timestamp
 }
 
@@ -81,7 +80,6 @@ export interface CreateClassData {
 export interface CreateStudentData {
   mssv: string
   fullName: string
-  className: string
 }
 
 export interface CreateEnrollmentData {
@@ -92,9 +90,8 @@ export interface CreateEnrollmentData {
 export interface CreateExamData {
   classId: string
   name: string
-  date: string // ISO string format
+  date: string
   maxScore: number
-  templatePdfPath?: string
 }
 
 export interface CreateSubmissionData {
@@ -104,18 +101,12 @@ export interface CreateSubmissionData {
   fullName: string
   score: number
   contentSummary: string
-  sourceImagePath?: string
-  filledPdfPath?: string
 }
 
 // Filter & Search Types
 export interface ClassFilter {
   teacherId?: string
   semester?: string
-}
-
-export interface StudentFilter {
-  className?: string
 }
 
 export interface EnrollmentFilter {

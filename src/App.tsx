@@ -4,6 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import ClassDetail from './pages/ClassDetail'
 import Management from './pages/Management'
 import StudentsManagement from './pages/StudentsManagement'
 import ScoreEntry from './pages/ScoreEntry'
@@ -33,6 +34,10 @@ function App() {
           <Route path='/register' element={isLoggedIn ? <Navigate to='/' /> : <Register />} />
           <Route path='/login' element={isLoggedIn ? <Navigate to='/' /> : <Login onLogin={handleLogin} />} />
           <Route path='/' element={isLoggedIn ? <Dashboard onLogout={handleLogout} /> : <Navigate to='/login' />} />
+          <Route
+            path='/class/:classId'
+            element={isLoggedIn ? <ClassDetail onLogout={handleLogout} /> : <Navigate to='/login' />}
+          />
           <Route path='/students' element={isLoggedIn ? <StudentsManagement /> : <Navigate to='/login' />} />
           <Route path='/management' element={isLoggedIn ? <Management /> : <Navigate to='/login' />} />
           <Route path='/score-entry' element={isLoggedIn ? <ScoreEntry /> : <Navigate to='/login' />} />

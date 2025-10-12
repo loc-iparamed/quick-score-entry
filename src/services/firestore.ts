@@ -29,7 +29,6 @@ import type {
   CreateExamData,
   CreateSubmissionData,
   ClassFilter,
-  StudentFilter,
   EnrollmentFilter,
   ExamFilter,
   SubmissionFilter,
@@ -149,13 +148,9 @@ export const classService = {
 
 // ============== STUDENT SERVICES ==============
 export const studentService = {
-  // Get all students with optional filter
-  async getAll(filter?: StudentFilter): Promise<Student[]> {
-    let q = query(collection(db, COLLECTIONS.STUDENTS), orderBy('fullName'))
-
-    if (filter?.className) {
-      q = query(q, where('className', '==', filter.className))
-    }
+  // Get all students
+  async getAll(): Promise<Student[]> {
+    const q = query(collection(db, COLLECTIONS.STUDENTS), orderBy('fullName'))
 
     const querySnapshot = await getDocs(q)
     return querySnapshot.docs.map(doc => ({
