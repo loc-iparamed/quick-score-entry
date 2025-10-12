@@ -69,6 +69,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
 
     loadDashboard()
+
+    const handleStudentDataChange = () => {
+      loadDashboard()
+    }
+    window.addEventListener('studentDataChanged', handleStudentDataChange)
+    return () => {
+      window.removeEventListener('studentDataChanged', handleStudentDataChange)
+    }
   }, [])
 
   const totalStudents = students.length

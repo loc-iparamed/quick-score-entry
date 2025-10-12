@@ -31,6 +31,7 @@ const StudentsManagement: React.FC = () => {
   const [formData, setFormData] = useState<CreateStudentData>({
     mssv: '',
     fullName: '',
+    email: '',
   })
 
   const loadStudents = async () => {
@@ -91,8 +92,8 @@ const StudentsManagement: React.FC = () => {
     e.preventDefault()
 
     try {
-      // Auto-generate email from MSSV
-      const email = `${formData.mssv}@student.tdtu.edu.vn`
+      // Auto-generate email from MSSV if not provided
+      const emailToUse = formData.email || `${formData.mssv}@student.tdtu.edu.vn`
 
       // Check if MSSV already exists (only for new students)
       if (!editingStudent) {
@@ -105,7 +106,7 @@ const StudentsManagement: React.FC = () => {
 
       const studentData = {
         ...formData,
-        email: email,
+        email: emailToUse,
       }
 
       if (editingStudent) {
@@ -120,6 +121,9 @@ const StudentsManagement: React.FC = () => {
       resetForm()
       setIsDialogOpen(false)
       setError(null)
+
+      // Notify Dashboard to reload data
+      window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       setError(editingStudent ? 'Không thể cập nhật sinh viên' : 'Không thể tạo sinh viên')
       console.error(err)
@@ -132,6 +136,7 @@ const StudentsManagement: React.FC = () => {
     setFormData({
       mssv: student.mssv,
       fullName: student.fullName,
+      email: student.email,
     })
     setIsDialogOpen(true)
   }
@@ -145,6 +150,9 @@ const StudentsManagement: React.FC = () => {
     try {
       await studentService.delete(student.id)
       await refreshStudents()
+
+      // Notify Dashboard to reload data
+      window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       setError('Không thể xóa sinh viên')
       console.error(err)
@@ -153,7 +161,7 @@ const StudentsManagement: React.FC = () => {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ mssv: '', fullName: '' })
+    setFormData({ mssv: '', fullName: '', email: '' })
     setEditingStudent(null)
     setError(null)
   }
@@ -293,6 +301,9 @@ const StudentsManagement: React.FC = () => {
                         <div>
                           <p className='font-semibold text-purple-900'>{formData.fullName || 'Tên sinh viên'}</p>
                           <p className='text-sm text-purple-600'>{formData.mssv || 'MSSV'}</p>
+                          <p className='text-xs text-purple-500'>
+                            {formData.email || `${formData.mssv}@student.tdtu.edu.vn`}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -334,6 +345,22 @@ const StudentsManagement: React.FC = () => {
                         required
                         className='border-purple-200 focus:border-purple-400 focus:ring-purple-400 transition-all duration-200'
                       />
+                    </div>
+
+                    <div className='space-y-3'>
+                      <Label htmlFor='email' className='text-sm font-semibold text-purple-900 flex items-center gap-2'>
+                        <Mail className='h-4 w-4' />
+                        Email
+                      </Label>
+                      <Input
+                        id='email'
+                        type='email'
+                        value={formData.email}
+                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        placeholder={`Tự động: ${formData.mssv}@student.tdtu.edu.vn`}
+                        className='border-purple-200 focus:border-purple-400 focus:ring-purple-400 transition-all duration-200'
+                      />
+                      <p className='text-xs text-muted-foreground'>Để trống để tự động tạo email từ MSSV</p>
                     </div>
                   </div>
 

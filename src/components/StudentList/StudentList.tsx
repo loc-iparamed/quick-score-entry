@@ -3,8 +3,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ArrowLeft, Mail, Users, BookOpen, Calendar, UserPlus, UserMinus } from 'lucide-react'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { ArrowLeft, Mail, Users, BookOpen, Calendar, UserPlus, UserMinus, FileText, Eye } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { enrollmentService, examService, submissionService } from '@/services/firestore'
 import type { Student, Enrollment, Exam, Submission } from '@/types'
 import type { DashboardClass } from '@/components/ClassList/ClassList'
@@ -32,6 +40,10 @@ const StudentList: React.FC<StudentListProps> = ({
   const [classExams, setClassExams] = useState<Record<string, Exam>>({})
   const [showStudentResults, setShowStudentResults] = useState(false)
   const [completedExamsCount, setCompletedExamsCount] = useState(0)
+  const [isExamManagementDialogOpen, setIsExamManagementDialogOpen] = useState(false)
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null)
+  const [examSubmissions, setExamSubmissions] = useState<Submission[]>([])
+  const [examSubmissionsLoading, setExamSubmissionsLoading] = useState(false)
 
   // Helper function to check if a student is enrolled in this class
   const isStudentEnrolled = (studentId: string) => {
@@ -101,6 +113,29 @@ const StudentList: React.FC<StudentListProps> = ({
       setLoading(false)
     }
   }
+
+  // Handle exam selection for management
+  const handleExamSelect = async (exam: Exam) => {
+    setSelectedExam(exam)
+    setExamSubmissionsLoading(true)
+
+    try {
+      // Get all submissions for this exam
+      const submissions = await submissionService.getAll({ examId: exam.id })
+      setExamSubmissions(submissions)
+    } catch (error) {
+      console.error('Error fetching exam submissions:', error)
+      setExamSubmissions([])
+    } finally {
+      setExamSubmissionsLoading(false)
+    }
+  }
+
+  // Handle back to exam list
+  const handleBackToExamList = () => {
+    setSelectedExam(null)
+    setExamSubmissions([])
+  }
   useEffect(() => {
     let isSubscribed = true
 
@@ -130,11 +165,10 @@ const StudentList: React.FC<StudentListProps> = ({
 
     const fetchCompletedExamsCount = async () => {
       try {
-        // Lấy tất cả exams có classId trùng với class hiện tại
-        const allExams = await examService.getAll({ classId: classInfo.id })
+        const allSubmissions = await submissionService.getAll({ classId: classInfo.id })
         if (!isSubscribed) return
 
-        setCompletedExamsCount(allExams.length)
+        setCompletedExamsCount(allSubmissions.length)
       } catch (error) {
         console.error('Error fetching completed exams count:', error)
         setCompletedExamsCount(0)
@@ -250,185 +284,360 @@ const StudentList: React.FC<StudentListProps> = ({
               <CardTitle className='text-2xl font-bold text-white'>{classInfo.name}</CardTitle>
               <p className='text-blue-100 mt-1'>{classInfo.semester}</p>
             </div>
-            <Dialog open={isEnrollmentDialogOpen} onOpenChange={setIsEnrollmentDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='bg-white/20 border-white/30 text-white hover:bg-white/30 hover-lift'
-                >
-                  <UserPlus className='w-4 h-4 mr-2' />
-                  Quản lý sinh viên
-                </Button>
-              </DialogTrigger>
-              <DialogContent className='sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white'>
-                <DialogHeader>
-                  <DialogTitle className='text-xl font-bold'>Quản lý sinh viên lớp {classInfo.name}</DialogTitle>
-                </DialogHeader>
+            <div className='flex gap-2'>
+              <Dialog open={isExamManagementDialogOpen} onOpenChange={setIsExamManagementDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='bg-white/20 border-white/30 text-white hover:bg-white/30 hover-lift'
+                  >
+                    <FileText className='w-4 h-4 mr-2' />
+                    Quản lý bài kiểm tra
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className='sm:max-w-6xl max-h-[90vh] overflow-y-auto bg-white'>
+                  <DialogHeader>
+                    <DialogTitle className='text-xl font-bold'>Quản lý bài kiểm tra - {classInfo.name}</DialogTitle>
+                    <DialogDescription>
+                      {selectedExam
+                        ? `Danh sách sinh viên đã nộp bài cho: ${selectedExam.name}`
+                        : 'Chọn bài kiểm tra để xem danh sách sinh viên đã nộp'}
+                    </DialogDescription>
+                  </DialogHeader>
 
-                <div className='space-y-6 py-4'>
-                  {/* Enrolled Students Section */}
-                  <div>
-                    <h3 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-                      <Users className='w-5 h-5 text-green-600' />
-                      Sinh viên đã đăng ký ({getEnrolledStudents().length})
-                    </h3>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto'>
-                      {getEnrolledStudents().map(student => {
-                        const isSelected = selectedStudent?.id === student.id
-                        return (
+                  {!selectedExam ? (
+                    // Exam List View
+                    <div className='space-y-4 py-4'>
+                      <h3 className='text-lg font-semibold flex items-center gap-2'>
+                        <BookOpen className='w-5 h-5 text-blue-600' />
+                        Danh sách bài kiểm tra ({Object.keys(classExams).length})
+                      </h3>
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        {Object.values(classExams).map(exam => (
+                          <Card
+                            key={exam.id}
+                            className='cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-blue-500'
+                            onClick={() => handleExamSelect(exam)}
+                          >
+                            <CardContent className='p-4'>
+                              <div className='flex items-center justify-between'>
+                                <div className='flex-1'>
+                                  <h4 className='font-semibold text-slate-800 mb-1'>{exam.name}</h4>
+                                  <p className='text-sm text-muted-foreground mb-2'>
+                                    Ngày thi: {formatExamDate(exam.date)}
+                                  </p>
+                                  <p className='text-xs text-slate-600'>Thang điểm: {exam.maxScore}</p>
+                                </div>
+                                <Eye className='w-5 h-5 text-blue-600' />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                        {Object.keys(classExams).length === 0 && (
+                          <div className='col-span-full text-center py-8 text-muted-foreground'>
+                            <BookOpen className='h-16 w-16 mx-auto mb-4 opacity-20' />
+                            <p className='text-lg font-medium'>Chưa có bài kiểm tra nào</p>
+                            <p className='text-sm'>Hãy tạo bài kiểm tra trước</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    // Student Submissions View
+                    <div className='space-y-4 py-4'>
+                      <div className='flex items-center justify-between'>
+                        <div>
+                          <h3 className='text-lg font-semibold flex items-center gap-2'>
+                            <Users className='w-5 h-5 text-green-600' />
+                            Danh sách sinh viên ({getEnrolledStudents().length})
+                          </h3>
+                          <p className='text-sm text-muted-foreground'>
+                            Bài kiểm tra: {selectedExam.name} - {formatExamDate(selectedExam.date)}
+                            {examSubmissions.length > 0 && (
+                              <span className='ml-2 text-green-600 font-medium'>
+                                • {examSubmissions.length} đã nộp bài
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleBackToExamList}
+                          className='flex items-center gap-2'
+                        >
+                          <ArrowLeft className='w-4 h-4' />
+                          Quay lại danh sách bài kiểm tra
+                        </Button>
+                      </div>
+
+                      {examSubmissionsLoading ? (
+                        <div className='py-8 text-center text-muted-foreground'>Đang tải danh sách sinh viên...</div>
+                      ) : (
+                        <div className='rounded-lg border overflow-hidden'>
+                          <Table>
+                            <TableHeader>
+                              <TableRow className='bg-slate-50'>
+                                <TableHead className='font-semibold'>#</TableHead>
+                                <TableHead className='font-semibold'>Sinh viên</TableHead>
+                                <TableHead className='font-semibold'>MSSV</TableHead>
+                                <TableHead className='font-semibold'>Trạng thái</TableHead>
+                                <TableHead className='font-semibold'>Điểm</TableHead>
+                                <TableHead className='font-semibold text-right'>Thời gian nộp</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {getEnrolledStudents().map((student, index) => {
+                                const submission = examSubmissions.find(s => s.studentId === student.id)
+                                const hasSubmitted = !!submission
+                                const scoreDisplay =
+                                  submission && typeof submission.score === 'number'
+                                    ? submission.score.toLocaleString('vi-VN')
+                                    : '--'
+                                const maxScoreDisplay = selectedExam?.maxScore
+                                  ? `/${selectedExam.maxScore.toLocaleString('vi-VN')}`
+                                  : ''
+
+                                return (
+                                  <TableRow
+                                    key={student.id}
+                                    className={`hover:bg-slate-50 ${hasSubmitted ? '' : 'bg-slate-50/50'}`}
+                                  >
+                                    <TableCell className='font-medium'>{index + 1}</TableCell>
+                                    <TableCell>
+                                      <div className='flex items-center space-x-3'>
+                                        <Avatar className='h-8 w-8'>
+                                          <AvatarFallback
+                                            className={`text-xs ${hasSubmitted ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' : 'bg-slate-300 text-slate-600'}`}
+                                          >
+                                            {getInitials(student.fullName)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className='font-medium'>{student.fullName}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className='font-medium'>{student.mssv}</TableCell>
+                                    <TableCell>
+                                      <span
+                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                          hasSubmitted ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                        }`}
+                                      >
+                                        {hasSubmitted ? 'Đã nộp' : 'Chưa nộp'}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span
+                                        className={`font-semibold ${hasSubmitted ? 'text-blue-600' : 'text-slate-400'}`}
+                                      >
+                                        {scoreDisplay}
+                                        {hasSubmitted ? maxScoreDisplay : ''}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell className='text-right text-slate-600'>
+                                      {submission?.extractedAt ? formatDate(submission.extractedAt) : '--'}
+                                    </TableCell>
+                                  </TableRow>
+                                )
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <DialogFooter>
+                    <Button variant='outline' onClick={() => setIsExamManagementDialogOpen(false)}>
+                      Đóng
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isEnrollmentDialogOpen} onOpenChange={setIsEnrollmentDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='bg-white/20 border-white/30 text-white hover:bg-white/30 hover-lift'
+                  >
+                    <UserPlus className='w-4 h-4 mr-2' />
+                    Quản lý sinh viên
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className='sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white'>
+                  <DialogHeader>
+                    <DialogTitle className='text-xl font-bold'>Quản lý sinh viên lớp {classInfo.name}</DialogTitle>
+                  </DialogHeader>
+
+                  <div className='space-y-6 py-4'>
+                    {/* Enrolled Students Section */}
+                    <div>
+                      <h3 className='text-lg font-semibold mb-3 flex items-center gap-2'>
+                        <Users className='w-5 h-5 text-green-600' />
+                        Sinh viên đã đăng ký ({getEnrolledStudents().length})
+                      </h3>
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto'>
+                        {getEnrolledStudents().map(student => {
+                          const isSelected = selectedStudent?.id === student.id
+                          return (
+                            <div
+                              key={student.id}
+                              onClick={() => handleStudentSelect(student)}
+                              className={`flex items-center justify-between p-3 border rounded-lg transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-200 shadow-sm'
+                                  : 'bg-green-50 border-green-200 hover:border-green-300 hover:shadow-sm'
+                              }`}
+                            >
+                              <div className='flex items-center gap-3'>
+                                <Avatar className='h-8 w-8'>
+                                  <AvatarFallback
+                                    className={`text-xs ${isSelected ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}
+                                  >
+                                    {getInitials(student.fullName)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className='font-medium text-slate-800'>{student.fullName}</p>
+                                  <p className='text-sm text-muted-foreground'>{student.mssv}</p>
+                                </div>
+                              </div>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={event => {
+                                  event.stopPropagation()
+                                  handleUnenrollStudent(student.id)
+                                }}
+                                disabled={loading}
+                                className='border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
+                              >
+                                <UserMinus className='w-4 h-4 mr-1' />
+                                Xóa
+                              </Button>
+                            </div>
+                          )
+                        })}
+                        {getEnrolledStudents().length === 0 && (
+                          <div className='col-span-full text-center py-8 text-muted-foreground'>
+                            Chưa có sinh viên nào đăng ký lớp này
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {selectedStudent && (
+                      <div className='rounded-lg border border-slate-200 bg-slate-50/80 p-4 space-y-4'>
+                        <div className='flex flex-wrap items-start justify-between gap-3'>
+                          <div>
+                            <h4 className='text-lg font-semibold text-slate-800'>Kết quả bài kiểm tra</h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {selectedStudent.fullName} (MSSV {selectedStudent.mssv})
+                            </p>
+                          </div>
+                          <Button variant='ghost' size='sm' onClick={() => setSelectedStudent(null)}>
+                            Đóng
+                          </Button>
+                        </div>
+                        {submissionsLoading ? (
+                          <div className='py-6 text-center text-muted-foreground'>Đang tải kết quả...</div>
+                        ) : studentSubmissions.length > 0 ? (
+                          <div className='space-y-3'>
+                            {studentSubmissions.map(submission => {
+                              const exam = classExams[submission.examId]
+                              const examDate = formatExamDate(exam?.date)
+                              const scoreDisplay =
+                                typeof submission.score === 'number' ? submission.score.toLocaleString('vi-VN') : '--'
+                              const maxScoreDisplay =
+                                typeof exam?.maxScore === 'number' ? exam.maxScore.toLocaleString('vi-VN') : null
+
+                              return (
+                                <div
+                                  key={submission.id}
+                                  className='flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm'
+                                >
+                                  <div>
+                                    <p className='font-semibold text-slate-800'>{exam?.name ?? 'Bài kiểm tra'}</p>
+                                    <p className='text-xs text-muted-foreground'>Ngày nhập điểm: {examDate}</p>
+                                  </div>
+                                  <div className='text-right'>
+                                    <p className='text-sm font-semibold text-blue-600'>
+                                      {scoreDisplay}
+                                      {maxScoreDisplay ? `/${maxScoreDisplay}` : ''}
+                                    </p>
+                                    <p className='text-xs text-muted-foreground'>
+                                      {maxScoreDisplay
+                                        ? `Thang điểm: ${maxScoreDisplay}`
+                                        : `Mã bài: ${submission.examId}`}
+                                    </p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <div className='py-6 text-center text-muted-foreground'>
+                            Sinh viên chưa có bài kiểm tra nào
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Unenrolled Students Section */}
+                    <div>
+                      <h3 className='text-lg font-semibold mb-3 flex items-center gap-2'>
+                        <UserPlus className='w-5 h-5 text-blue-600' />
+                        Sinh viên có thể thêm ({getUnenrolledStudents().length})
+                      </h3>
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto'>
+                        {getUnenrolledStudents().map(student => (
                           <div
                             key={student.id}
-                            onClick={() => handleStudentSelect(student)}
-                            className={`flex items-center justify-between p-3 border rounded-lg transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-200 shadow-sm'
-                                : 'bg-green-50 border-green-200 hover:border-green-300 hover:shadow-sm'
-                            }`}
+                            className='flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg'
                           >
                             <div className='flex items-center gap-3'>
                               <Avatar className='h-8 w-8'>
-                                <AvatarFallback
-                                  className={`text-xs ${isSelected ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}
-                                >
+                                <AvatarFallback className='bg-blue-100 text-blue-700 text-xs'>
                                   {getInitials(student.fullName)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className='font-medium text-slate-800'>{student.fullName}</p>
-                                <p className='text-sm text-muted-foreground'>{student.mssv}</p>
+                                <p className='font-medium text-blue-900'>{student.fullName}</p>
+                                <p className='text-sm text-blue-600'>{student.mssv}</p>
                               </div>
                             </div>
                             <Button
                               variant='outline'
                               size='sm'
-                              onClick={event => {
-                                event.stopPropagation()
-                                handleUnenrollStudent(student.id)
-                              }}
+                              onClick={() => handleEnrollStudent(student.id)}
                               disabled={loading}
-                              className='border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
+                              className='border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300'
                             >
-                              <UserMinus className='w-4 h-4 mr-1' />
-                              Xóa
+                              <UserPlus className='w-4 h-4 mr-1' />
+                              Thêm
                             </Button>
                           </div>
-                        )
-                      })}
-                      {getEnrolledStudents().length === 0 && (
-                        <div className='col-span-full text-center py-8 text-muted-foreground'>
-                          Chưa có sinh viên nào đăng ký lớp này
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedStudent && (
-                    <div className='rounded-lg border border-slate-200 bg-slate-50/80 p-4 space-y-4'>
-                      <div className='flex flex-wrap items-start justify-between gap-3'>
-                        <div>
-                          <h4 className='text-lg font-semibold text-slate-800'>Kết quả bài kiểm tra</h4>
-                          <p className='text-sm text-muted-foreground'>
-                            {selectedStudent.fullName} (MSSV {selectedStudent.mssv})
-                          </p>
-                        </div>
-                        <Button variant='ghost' size='sm' onClick={() => setSelectedStudent(null)}>
-                          Đóng
-                        </Button>
-                      </div>
-                      {submissionsLoading ? (
-                        <div className='py-6 text-center text-muted-foreground'>Đang tải kết quả...</div>
-                      ) : studentSubmissions.length > 0 ? (
-                        <div className='space-y-3'>
-                          {studentSubmissions.map(submission => {
-                            const exam = classExams[submission.examId]
-                            const examDate = formatExamDate(exam?.date)
-                            const scoreDisplay =
-                              typeof submission.score === 'number' ? submission.score.toLocaleString('vi-VN') : '--'
-                            const maxScoreDisplay =
-                              typeof exam?.maxScore === 'number' ? exam.maxScore.toLocaleString('vi-VN') : null
-
-                            return (
-                              <div
-                                key={submission.id}
-                                className='flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm'
-                              >
-                                <div>
-                                  <p className='font-semibold text-slate-800'>{exam?.name ?? 'Bài kiểm tra'}</p>
-                                  <p className='text-xs text-muted-foreground'>Ngày nhập điểm: {examDate}</p>
-                                </div>
-                                <div className='text-right'>
-                                  <p className='text-sm font-semibold text-blue-600'>
-                                    {scoreDisplay}
-                                    {maxScoreDisplay ? `/${maxScoreDisplay}` : ''}
-                                  </p>
-                                  <p className='text-xs text-muted-foreground'>
-                                    {maxScoreDisplay
-                                      ? `Thang điểm: ${maxScoreDisplay}`
-                                      : `Mã bài: ${submission.examId}`}
-                                  </p>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : (
-                        <div className='py-6 text-center text-muted-foreground'>Sinh viên chưa có bài kiểm tra nào</div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Unenrolled Students Section */}
-                  <div>
-                    <h3 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-                      <UserPlus className='w-5 h-5 text-blue-600' />
-                      Sinh viên có thể thêm ({getUnenrolledStudents().length})
-                    </h3>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto'>
-                      {getUnenrolledStudents().map(student => (
-                        <div
-                          key={student.id}
-                          className='flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg'
-                        >
-                          <div className='flex items-center gap-3'>
-                            <Avatar className='h-8 w-8'>
-                              <AvatarFallback className='bg-blue-100 text-blue-700 text-xs'>
-                                {getInitials(student.fullName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className='font-medium text-blue-900'>{student.fullName}</p>
-                              <p className='text-sm text-blue-600'>{student.mssv}</p>
-                            </div>
+                        ))}
+                        {getUnenrolledStudents().length === 0 && (
+                          <div className='col-span-full text-center py-8 text-muted-foreground'>
+                            Tất cả sinh viên đã được thêm vào lớp này
                           </div>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => handleEnrollStudent(student.id)}
-                            disabled={loading}
-                            className='border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300'
-                          >
-                            <UserPlus className='w-4 h-4 mr-1' />
-                            Thêm
-                          </Button>
-                        </div>
-                      ))}
-                      {getUnenrolledStudents().length === 0 && (
-                        <div className='col-span-full text-center py-8 text-muted-foreground'>
-                          Tất cả sinh viên đã được thêm vào lớp này
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <DialogFooter>
-                  <Button variant='outline' onClick={() => setIsEnrollmentDialogOpen(false)} disabled={loading}>
-                    Đóng
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <DialogFooter>
+                    <Button variant='outline' onClick={() => setIsEnrollmentDialogOpen(false)} disabled={loading}>
+                      Đóng
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -456,7 +665,7 @@ const StudentList: React.FC<StudentListProps> = ({
                 <BookOpen className='w-6 h-6 text-white' />
               </div>
               <div>
-                <p className='text-sm text-muted-foreground'>Số bài kiểm tra</p>
+                <p className='text-sm text-muted-foreground'>Tổng số bài kiểm tra đã nhập</p>
                 <p className='text-2xl font-bold text-slate-800'>{completedExamsCount}</p>
               </div>
             </div>

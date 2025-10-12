@@ -80,6 +80,7 @@ export interface CreateClassData {
 export interface CreateStudentData {
   mssv: string
   fullName: string
+  email: string
 }
 
 export interface CreateEnrollmentData {

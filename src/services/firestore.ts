@@ -45,6 +45,21 @@ const COLLECTIONS = {
   SUBMISSIONS: 'submissions',
 } as const
 
+// Internal function to delete submissions by studentId
+const deleteSubmissionsByStudentId = async (studentId: string): Promise<void> => {
+  const q = query(collection(db, COLLECTIONS.SUBMISSIONS), where('studentId', '==', studentId))
+  const querySnapshot = await getDocs(q)
+
+  const batch = writeBatch(db)
+  querySnapshot.docs.forEach(doc => {
+    batch.delete(doc.ref)
+  })
+
+  if (querySnapshot.docs.length > 0) {
+    await batch.commit()
+  }
+}
+
 // ============== USER SERVICES ==============
 export const userService = {
   // Get all teachers
@@ -191,7 +206,31 @@ export const studentService = {
 
   // Delete student
   async delete(id: string): Promise<void> {
-    await deleteDoc(doc(db, COLLECTIONS.STUDENTS, id))
+    // First delete all submissions for this student
+    await deleteSubmissionsByStudentId(id)
+
+    const batch = writeBatch(db)
+
+    // Delete student
+    batch.delete(doc(db, COLLECTIONS.STUDENTS, id))
+
+    // Get all enrollments for this student
+    const enrollmentsQuery = query(collection(db, COLLECTIONS.ENROLLMENTS), where('studentId', '==', id))
+    const enrollmentsSnapshot = await getDocs(enrollmentsQuery)
+
+    // Delete all enrollments and update class student counts
+    for (const enrollmentDoc of enrollmentsSnapshot.docs) {
+      const enrollmentData = enrollmentDoc.data() as Enrollment
+      batch.delete(enrollmentDoc.ref)
+
+      // Update class student count
+      const classRef = doc(db, COLLECTIONS.CLASSES, enrollmentData.classId)
+      batch.update(classRef, {
+        studentCount: increment(-1),
+      })
+    }
+
+    await batch.commit()
   },
 }
 

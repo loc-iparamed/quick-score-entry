@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { classService, examService, submissionService, scannerService } from '@/services/firestore'
+import {
+  classService,
+  examService,
+  submissionService,
+  scannerService,
+  studentService,
+  enrollmentService,
+} from '@/services/firestore'
 import {
   ScoreEntryHeader,
   ClassExamSelector,
@@ -11,7 +18,7 @@ import {
   EditScanDialog,
   ManualEntryDialog,
 } from '@/components/ScoreEntry'
-import type { Class, Exam } from '@/types'
+import type { Class, Exam, Student } from '@/types'
 
 const ScoreEntry = () => {
   const [classes, setClasses] = useState<Class[]>([])
@@ -147,8 +154,11 @@ const ScoreEntry = () => {
       setError(null)
       setMessage(null)
 
-      const operations: Promise<unknown>[] = []
+      // Kiểm tra sinh viên không tồn tại
+      const missingStudents: Array<{ ho_ten: string; mssv: string; diem: number }> = []
+      const existingStudentMap = new Map<string, Student>()
 
+      // Kiểm tra từng sinh viên
       for (const result of scanResults) {
         if (result.diem < 0 || result.diem > 10) {
           setError(`Điểm của ${result.ho_ten} (${result.mssv}) phải trong khoảng 0 - 10`)
@@ -156,12 +166,85 @@ const ScoreEntry = () => {
           return
         }
 
-        // Tạo submission trực tiếp từ scan result
+        // Kiểm tra sinh viên có tồn tại theo MSSV không
+        const existingStudent = await studentService.getByMSSV(result.mssv)
+
+        if (existingStudent) {
+          // Kiểm tra tên có khớp không
+          if (existingStudent.fullName.toLowerCase().trim() !== result.ho_ten.toLowerCase().trim()) {
+            setError(
+              `MSSV ${result.mssv} đã tồn tại với tên "${existingStudent.fullName}" nhưng dữ liệu scan có tên "${result.ho_ten}". Vui lòng kiểm tra lại.`,
+            )
+            setIsSaving(false)
+            return
+          }
+          existingStudentMap.set(result.mssv, existingStudent)
+        } else {
+          missingStudents.push(result)
+        }
+      }
+
+      // Nếu có sinh viên không tồn tại, hiển thị popup confirm
+      if (missingStudents.length > 0) {
+        const studentList = missingStudents.map(s => `- ${s.ho_ten} (${s.mssv})`).join('\n')
+
+        const confirmMessage = `Phát hiện ${missingStudents.length} sinh viên chưa có trong hệ thống:\n\n${studentList}\n\nBạn có muốn tự động tạo mới các sinh viên này và thêm vào lớp "${selectedClass?.name}" không?`
+
+        if (!confirm(confirmMessage)) {
+          setIsSaving(false)
+          return
+        }
+
+        // Tạo sinh viên mới và thêm vào lớp
+        for (const missingStudent of missingStudents) {
+          try {
+            // Tạo sinh viên mới
+            const email = `${missingStudent.mssv}@student.tdtu.edu.vn`
+            const newStudentId = await studentService.create({
+              mssv: missingStudent.mssv,
+              fullName: missingStudent.ho_ten,
+              email: email,
+            })
+
+            // Thêm sinh viên vào lớp
+            await enrollmentService.create({
+              classId: selectedClassId,
+              studentId: newStudentId,
+            })
+
+            // Thêm vào map để sử dụng sau này
+            existingStudentMap.set(missingStudent.mssv, {
+              id: newStudentId,
+              mssv: missingStudent.mssv,
+              fullName: missingStudent.ho_ten,
+              email: email,
+              createdAt: { toDate: () => new Date() } as import('firebase/firestore').Timestamp,
+            })
+          } catch (error) {
+            console.error(`Error creating student ${missingStudent.mssv}:`, error)
+            setError(`Không thể tạo sinh viên ${missingStudent.ho_ten} (${missingStudent.mssv})`)
+            setIsSaving(false)
+            return
+          }
+        }
+      }
+
+      // Tạo submissions
+      const operations: Promise<unknown>[] = []
+
+      for (const result of scanResults) {
+        const student = existingStudentMap.get(result.mssv)
+        if (!student) {
+          setError(`Không tìm thấy thông tin sinh viên ${result.mssv}`)
+          setIsSaving(false)
+          return
+        }
+
         operations.push(
           submissionService.create({
             examId: selectedExamId,
             classId: selectedClassId,
-            studentId: result.mssv, // Sử dụng MSSV làm studentId
+            studentId: student.id, // Sử dụng studentId thực
             fullName: result.ho_ten,
             score: result.diem,
             contentSummary: `Python scan result from ${result.create_at}`,
@@ -174,7 +257,16 @@ const ScoreEntry = () => {
       // Xóa sạch dữ liệu trong Realtime Database sau khi lưu thành công
       await scannerService.clearAllScanResults()
 
-      setMessage(`Lưu thành công ${operations.length} điểm từ kết quả scan Python và đã xóa dữ liệu scan`)
+      const createdCount = missingStudents.length
+      let message = `Lưu thành công ${operations.length} điểm từ kết quả scan Python và đã xóa dữ liệu scan`
+      if (createdCount > 0) {
+        message += `\n\nĐã tự động tạo ${createdCount} sinh viên mới và thêm vào lớp "${selectedClass?.name}"`
+      }
+
+      setMessage(message)
+
+      // Notify other components to reload data
+      window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       console.error('🎯 Error saving scores:', err)
       setError('Không thể lưu điểm. Vui lòng thử lại')
