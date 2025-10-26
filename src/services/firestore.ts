@@ -521,10 +521,19 @@ export const scannerService = {
 
   // Phương thức để lắng nghe dữ liệu từ root (cho Python test)
   getScanResultsFromRoot(
-    callback: (data: Array<{ ho_ten: string; mssv: string; diem: number; create_at: string; id: string }>) => void,
+    callback: (
+      data: Array<{
+        ho_ten: string
+        mssv: string
+        diem: number | null
+        create_at: string
+        id: string
+        image_data?: string
+      }>,
+    ) => void,
   ): () => void {
     try {
-      const resultsRef = ref(realtimeDB, '/')
+      const resultsRef = ref(realtimeDB, 'exam_results')
 
       const listener = onValue(
         resultsRef,
@@ -537,14 +546,15 @@ export const scannerService = {
                 .map(key => {
                   const item = data[key]
                   return {
-                    ho_ten: item.ho_ten || '',
-                    mssv: item.mssv || '',
-                    diem: parseFloat(item.diem) || 0,
+                    ho_ten: item.fullName || '',
+                    mssv: item.studentId || '',
+                    diem: item.score ? parseFloat(item.score) : null,
                     create_at: item.timestamp || new Date().toISOString(),
                     id: key,
+                    image_data: item.image_data || null,
                   }
                 })
-                .filter(item => item.ho_ten && item.mssv) // Chỉ lấy những item có đủ dữ liệu
+                .filter(item => item.id) // Chỉ cần có ID là đủ
 
               callback(resultsArray)
             } else {
@@ -570,13 +580,15 @@ export const scannerService = {
     }
   },
 
-  // Update scan result in Realtime Database
+  // Update scan result in Realtime Database (không thay đổi timestamp)
   async updateScanResult(id: string, data: { ho_ten: string; mssv: string; diem: number }): Promise<void> {
     try {
-      const resultRef = ref(realtimeDB, `/${id}`)
+      const resultRef = ref(realtimeDB, `exam_results/${id}`)
       await update(resultRef, {
-        ...data,
-        timestamp: new Date().toISOString(),
+        fullName: data.ho_ten,
+        studentId: data.mssv,
+        score: data.diem,
+        // Không cập nhật timestamp để giữ nguyên thời gian scan gốc
       })
     } catch (err) {
       console.error('🔥 Error updating scan result:', err)
@@ -587,7 +599,7 @@ export const scannerService = {
   // Delete scan result from Realtime Database
   async deleteScanResult(id: string): Promise<void> {
     try {
-      const resultRef = ref(realtimeDB, `/${id}`)
+      const resultRef = ref(realtimeDB, `exam_results/${id}`)
       await remove(resultRef)
     } catch (err) {
       console.error('🔥 Error deleting scan result:', err)
@@ -598,7 +610,7 @@ export const scannerService = {
   // Clear all scan results from Realtime Database
   async clearAllScanResults(): Promise<void> {
     try {
-      const rootRef = ref(realtimeDB, '/')
+      const rootRef = ref(realtimeDB, 'exam_results')
       await remove(rootRef)
     } catch (err) {
       console.error('🔥 Error clearing all scan results:', err)
@@ -609,10 +621,13 @@ export const scannerService = {
   // Add manual scan result to Realtime Database
   async addManualScanResult(data: { ho_ten: string; mssv: string; diem: number }): Promise<void> {
     try {
-      const resultRef = ref(realtimeDB, `/${Date.now()}_${data.mssv}`)
+      const resultRef = ref(realtimeDB, `exam_results/${Date.now()}_${data.mssv}`)
       await update(resultRef, {
-        ...data,
+        fullName: data.ho_ten,
+        studentId: data.mssv,
+        score: data.diem,
         timestamp: new Date().toISOString(),
+        image_data: null,
       })
     } catch (err) {
       console.error('🔥 Error adding manual scan result:', err)

@@ -34,9 +34,10 @@ const ScoreEntry = () => {
     Array<{
       ho_ten: string
       mssv: string
-      diem: number
+      diem: number | null
       create_at: string
       id: string
+      image_data?: string
     }>
   >([])
   const [scanLoading, setScanLoading] = useState(false)
@@ -54,8 +55,9 @@ const ScoreEntry = () => {
     id: string
     ho_ten: string
     mssv: string
-    diem: number
+    diem: number | null | undefined
     create_at: string
+    image_data?: string
   } | null>(null)
   const [isUpdatingScan, setIsUpdatingScan] = useState(false)
   const [showManualEntryDialog, setShowManualEntryDialog] = useState(false)
@@ -155,11 +157,40 @@ const ScoreEntry = () => {
       setMessage(null)
 
       // Kiểm tra sinh viên không tồn tại
-      const missingStudents: Array<{ ho_ten: string; mssv: string; diem: number }> = []
+      const missingStudents: Array<{ ho_ten: string; mssv: string; diem: number | null }> = []
       const existingStudentMap = new Map<string, Student>()
 
-      // Kiểm tra từng sinh viên
+      // Kiểm tra từng sinh viên - Validation đầy đủ trước khi lưu
       for (const result of scanResults) {
+        // Kiểm tra họ tên
+        if (!result.ho_ten || !result.ho_ten.trim()) {
+          setError(`Thiếu họ tên cho sinh viên MSSV: ${result.mssv || 'Chưa có MSSV'}`)
+          setIsSaving(false)
+          return
+        }
+
+        // Kiểm tra MSSV
+        if (!result.mssv || !result.mssv.trim()) {
+          setError(`Thiếu MSSV cho sinh viên: ${result.ho_ten}`)
+          setIsSaving(false)
+          return
+        }
+
+        // Kiểm tra độ dài MSSV (tối đa 8 ký tự)
+        if (result.mssv.trim().length > 8) {
+          setError(`MSSV của ${result.ho_ten} (${result.mssv}) không được quá 8 ký tự`)
+          setIsSaving(false)
+          return
+        }
+
+        // Kiểm tra điểm
+        if (result.diem === null || result.diem === undefined) {
+          setError(`Điểm của ${result.ho_ten} (${result.mssv}) chưa được nhập`)
+          setIsSaving(false)
+          return
+        }
+
+        // Kiểm tra điểm phải ≤ 10 và ≥ 0
         if (result.diem < 0 || result.diem > 10) {
           setError(`Điểm của ${result.ho_ten} (${result.mssv}) phải trong khoảng 0 - 10`)
           setIsSaving(false)
@@ -246,7 +277,7 @@ const ScoreEntry = () => {
             classId: selectedClassId,
             studentId: student.id, // Sử dụng studentId thực
             fullName: result.ho_ten,
-            score: result.diem,
+            score: result.diem!, // Đã validate ở trên nên có thể dùng !
             contentSummary: `Python scan result from ${result.create_at}`,
           }),
         )
@@ -280,8 +311,9 @@ const ScoreEntry = () => {
       id: result.id || '',
       ho_ten: result.ho_ten,
       mssv: result.mssv,
-      diem: result.diem,
+      diem: result.diem || 0,
       create_at: result.create_at,
+      image_data: result.image_data,
     })
     setShowEditScanDialog(true)
   }
@@ -308,7 +340,7 @@ const ScoreEntry = () => {
       await scannerService.updateScanResult(editingScanResult.id, {
         ho_ten: editingScanResult.ho_ten,
         mssv: editingScanResult.mssv,
-        diem: editingScanResult.diem,
+        diem: editingScanResult.diem || 0,
       })
 
       setMessage('Đã cập nhật kết quả scan thành công')
