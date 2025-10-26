@@ -1,6 +1,6 @@
-# Quick Score Entry - Ứng dụng Quản lý Sinh viên
+# Quick Score Entry - Hệ thống Nhập Điểm
 
-Ứng dụng web hiện đại giúp giảng viên quản lý và theo dõi thông tin sinh viên trong các lớp học.
+Ứng dụng web hiện đại giúp giảng viên quản lý điểm số và thông tin sinh viên với tích hợp máy scan tự động.
 
 ## 🚀 Cài đặt và Chạy
 
@@ -35,20 +35,54 @@ npm run dev
 
 Truy cập: `http://localhost:5173`
 
-## 🔧 Cấu hình Environment
+## 🔧 Cấu hình Environment Variables
 
 Tạo file `.env` trong thư mục gốc với các biến sau:
 
 ```env
 # Firebase Configuration
-FIREBASE_API_KEY=your_api_key_here
-FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
-FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-FIREBASE_APP_ID=your_app_id
-FIREBASE_MEASUREMENT_ID=your_measurement_id
+VITE_FIREBASE_API_KEY=your_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_DATABASE_URL=https://your_project-default-rtdb.asia-southeast1.firebasedatabase.app
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
+VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
+
+## 📦 Deploy trên Vercel
+
+### 1. Kết nối repository với Vercel
+
+- Đăng nhập vào [Vercel](https://vercel.com)
+- Import repository từ GitHub
+
+### 2. Cấu hình Environment Variables trên Vercel
+
+- Vào Project Settings → Environment Variables
+- Thêm tất cả các biến `VITE_FIREBASE_*` từ file `.env`
+
+### 3. Deploy
+
+```bash
+# Build local để test trước
+npm run build
+
+# Push code lên GitHub (Vercel sẽ tự động deploy)
+git add .
+git commit -m "Fixed deployment issues"
+git push origin main
+```
+
+## 🔧 Khắc phục Trang Trắng trên Vercel
+
+Các bước đã được thực hiện để khắc phục:
+
+1. **Di chuyển firebase-config**: Từ root folder vào `src/firebase-config.ts`
+2. **Cập nhật import paths**: Tất cả các import firebase đã được sửa
+3. **Cấu hình Vite**: Thêm `base: './'` và build options
+4. **Vercel config**: Cập nhật `vercel.json` với framework detection
 
 ## ✨ Tính năng
 

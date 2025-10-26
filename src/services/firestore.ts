@@ -14,7 +14,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { ref, onValue, off, update, remove } from 'firebase/database'
-import { db, realtimeDB } from '../../firebase-config'
+import { db, realtimeDB } from '../firebase-config'
 import type {
   User,
   Class,
