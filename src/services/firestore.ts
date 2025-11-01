@@ -329,6 +329,7 @@ export const examService = {
     batch.set(examRef, {
       ...data,
       date: Timestamp.fromDate(new Date(data.date)),
+      updatedAt: Timestamp.now(),
     })
 
     // Update class exam count
@@ -347,7 +348,10 @@ export const examService = {
     if ('date' in data && typeof data.date === 'string') {
       updateData.date = Timestamp.fromDate(new Date(data.date))
     }
-    await updateDoc(doc(db, COLLECTIONS.EXAMS, id), updateData)
+    await updateDoc(doc(db, COLLECTIONS.EXAMS, id), {
+      ...updateData,
+      updatedAt: Timestamp.now(),
+    })
   },
 
   // Delete exam

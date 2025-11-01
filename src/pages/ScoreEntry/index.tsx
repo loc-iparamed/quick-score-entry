@@ -21,6 +21,11 @@ import {
 import type { Class, Exam, Student } from '@/types'
 
 const ScoreEntry = () => {
+  const DEFAULT_EXAM_NAMES = useMemo(
+    () => ['Bài kiểm tra đợt 1', 'Bài kiểm tra đợt 2', 'Bài kiểm tra giữa kỳ', 'Bài kiểm tra cuối kỳ'] as const,
+    [],
+  )
+
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClassId, setSelectedClassId] = useState('')
   const [exams, setExams] = useState<Exam[]>([])
@@ -96,8 +101,33 @@ const ScoreEntry = () => {
       try {
         setExamLoading(true)
         setError(null)
-        const data = await examService.getAll({ classId: selectedClassId })
-        setExams(data)
+        // Load current exams
+        const existing = await examService.getAll({ classId: selectedClassId })
+
+        // Ensure 4 default exams exist; create missing ones
+        const existingNames = new Set(existing.map(e => e.name))
+        for (const name of DEFAULT_EXAM_NAMES) {
+          if (!existingNames.has(name)) {
+            await examService.create({
+              name,
+              classId: selectedClassId,
+              maxScore: 10,
+              date: new Date().toISOString(),
+            })
+          }
+        }
+
+        // Reload and filter only default exams, ordered as defined
+        const refreshed = await examService.getAll({ classId: selectedClassId })
+        const filtered = refreshed
+          .filter(e => DEFAULT_EXAM_NAMES.includes(e.name as (typeof DEFAULT_EXAM_NAMES)[number]))
+          .sort(
+            (a, b) =>
+              DEFAULT_EXAM_NAMES.indexOf(a.name as (typeof DEFAULT_EXAM_NAMES)[number]) -
+              DEFAULT_EXAM_NAMES.indexOf(b.name as (typeof DEFAULT_EXAM_NAMES)[number]),
+          )
+
+        setExams(filtered)
         setSelectedExamId('')
       } catch (err) {
         console.error(err)
@@ -108,7 +138,7 @@ const ScoreEntry = () => {
     }
 
     loadExams()
-  }, [selectedClassId])
+  }, [selectedClassId, DEFAULT_EXAM_NAMES])
 
   useEffect(() => {
     if (!selectedClassId || !selectedExamId) {
@@ -289,7 +319,7 @@ const ScoreEntry = () => {
       await scannerService.clearAllScanResults()
 
       const createdCount = missingStudents.length
-      let message = `Lưu thành công ${operations.length} điểm từ kết quả scan Python và đã xóa dữ liệu scan`
+      let message = `Lưu thành công ${operations.length} điểm từ kết quả scan`
       if (createdCount > 0) {
         message += `\n\nĐã tự động tạo ${createdCount} sinh viên mới và thêm vào lớp "${selectedClass?.name}"`
       }

@@ -45,6 +45,7 @@ export interface Exam {
   date: Timestamp
   maxScore: number
   templatePdfPath?: string
+  updatedAt?: Timestamp
 }
 
 // Submission Interface
