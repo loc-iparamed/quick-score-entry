@@ -1,6 +1,6 @@
-# Quick Score Entry - Hệ thống Nhập Điểm
+# Quick Score Entry - Hệ thống Quản Lý Sinh Viên & Nhập Điểm
 
-Ứng dụng web hiện đại giúp giảng viên quản lý điểm số và thông tin sinh viên với tích hợp máy scan tự động.
+Ứng dụng web hiện đại dành cho giảng viên, cung cấp giải pháp toàn diện để quản lý lớp học, sinh viên và điểm số với tích hợp máy scan tự động thông minh.
 
 ## 🚀 Cài đặt và Chạy
 
@@ -84,208 +84,165 @@ Các bước đã được thực hiện để khắc phục:
 3. **Cấu hình Vite**: Thêm `base: './'` và build options
 4. **Vercel config**: Cập nhật `vercel.json` với framework detection
 
-## ✨ Tính năng
+## ✨ Tính năng chính
 
-- 🔐 **Đăng nhập bảo mật**: Xác thực tài khoản giảng viên
-- 👥 **Quản lý sinh viên**: Thêm, sửa, xóa thông tin sinh viên
-- 📊 **Thống kê**: Xem báo cáo tổng quan về lớp học
-- 🎯 **Nhập điểm**: Ghi điểm nhanh và chính xác
+### 🔐 Hệ thống xác thực
 
-## 🔑 Đăng nhập
+- **Đăng ký tài khoản**: Tạo tài khoản mới với Firebase Authentication
+- **Đăng nhập bảo mật**: Xác thực email/password qua Firebase
+- **Quản lý phiên**: Tự động duy trì trạng thái đăng nhập
+- **Đổi mật khẩu**: Cập nhật mật khẩu an toàn
 
-- 📚 **Quản lý lớp học**: Hiển thị danh sách các lớp đang giảng dạy- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 📚 Quản lý lớp học toàn diện
 
-````
+- **Dashboard tổng quan**: Hiển thị thống kê tổng số lớp, sinh viên
+- **Danh sách lớp học**: Xem tất cả lớp với thông tin chi tiết
+- **Tạo lớp mới**: Thêm lớp học với tên, học kỳ, giảng viên
+- **Chỉnh sửa lớp**: Cập nhật thông tin lớp học
+- **Xóa lớp**: Xóa lớp với xác nhận an toàn
+- **Thống kê lớp**: Số sinh viên, số bài kiểm tra
 
-Tài khoản: admin- 👥 **Chi tiết sinh viên**: Xem thông tin đầy đủ của sinh viên trong từng lớp
+### � Quản lý sinh viên thông minh
 
-Mật khẩu: admin
+- **Danh sách sinh viên**: Hiển thị tất cả sinh viên trong hệ thống
+- **Thêm sinh viên**: Tạo hồ sơ sinh viên với thông tin đầy đủ
+- **Chỉnh sửa thông tin**: Cập nhật MSSV, họ tên, email, số điện thoại
+- **Xóa sinh viên**: Xóa an toàn với xác nhận
+- **Đăng ký lớp học**: Thêm/bỏ sinh viên khỏi lớp
+- **Tìm kiếm nhanh**: Tìm sinh viên theo tên, MSSV
 
-```- 📊 **Thống kê GPA**: Theo dõi điểm trung bình của sinh viên## React Compiler
+### 📊 Quản lý điểm số và bài kiểm tra
 
+- **Tích hợp máy scan**: Nhận kết quả từ máy scan tự động realtime
+- **Nhập điểm thủ công**: Thêm điểm bằng tay khi cần thiết
+- **Chỉnh sửa kết quả**: Sửa thông tin và điểm số đã scan
+- **Xem ảnh bài thi**: Preview ảnh bài làm từ máy scan
+- **Tạo bài kiểm tra**: Thêm bài kiểm tra mới cho lớp
+- **Quản lý submissions**: Theo dõi sinh viên nộp bài
+- **Trạng thái máy scan**: Hiển thị online/offline status
 
+### � Xuất điểm và báo cáo
 
-## 🛠️ Tech Stack- 🎨 **Giao diện hiện đại**: UI/UX thân thiện với thiết kế responsive
+- **Xuất CSV**: Xuất bảng điểm với UTF-8 BOM
+- **Điểm có trọng số**: Tính điểm tổng kết theo công thức (0.1, 0.2, 0.2, 0.5)
+- **Nhiều cách tính**: Chọn trung bình hoặc điểm cao nhất
+- **Toast notifications**: Thông báo đẹp thay thế alert cũ
+- **Xác nhận xuất**: Dialog xác nhận trước khi xuất
 
+### 🎯 Giao diện người dùng hiện đại
 
+- **Shadcn/UI Components**: Giao diện đẹp, nhất quán
+- **Sonner Toast**: Thông báo màu sắc, có thể đóng
+- **Responsive Design**: Tương thích mọi thiết bị
+- **Dark Theme Ready**: Chuẩn bị sẵn cho chế độ tối
+- **Animations**: Hiệu ứng mượt mà, chuyên nghiệp
 
-- React 19 + TypeScriptThe React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## � Tài khoản đăng nhập
 
-- Vite
+Hệ thống hỗ trợ đăng ký tài khoản mới qua Firebase Authentication hoặc sử dụng tài khoản demo:
 
-- React Router DOM## 🚀 Công nghệ sử dụng
+```
+Email: admin@quickscore.com
+Mật khẩu: admin123
+```
 
-- CSS Modules
+## �️ Công nghệ sử dụng
 
-## Expanding the ESLint configuration
+### Frontend Framework
 
-## 📁 Cấu trúc
+- **React 19** - Framework frontend hiện đại nhất
+- **TypeScript** - Type safety và developer experience
+- **Vite** - Build tool nhanh với HMR
+- **React Router DOM v7** - Routing với file-based structure
 
-- **Frontend**: React 19 + TypeScript
+### UI/UX Libraries
 
-````
+- **Shadcn/UI** - Component library đẹp, có thể tùy chỉnh
+- **Tailwind CSS v4** - Utility-first CSS framework
+- **Lucide React** - Icon library hiện đại
+- **Sonner** - Toast notification library
+- **React Hook Form** - Form handling với validation
 
-src/- **Build Tool**: ViteIf you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Backend & Database
 
-├── components/ # ClassList, StudentList
+- **Firebase Firestore** - NoSQL database realtime
+- **Firebase Realtime Database** - Dữ liệu scan realtime
+- **Firebase Authentication** - Xác thực user an toàn
 
-├── pages/ # Login, Dashboard- **Routing**: React Router DOM v7
+### Development Tools
 
-├── styles/ # CSS
+- **ESLint** - Code linting với TypeScript rules
+- **Prettier** - Code formatting nhất quán
+- **Zod** - Schema validation
+- **Class Variance Authority** - Variant-based styling
 
-└── App.tsx # Main app- **Styling**: CSS Modules```js
+## 📁 Cấu trúc dự án
 
-````
+```
+src/
+├── components/              # Components tái sử dụng
+│   ├── ClassList/          # Component danh sách lớp học
+│   ├── StudentList/        # Component chi tiết sinh viên lớp
+│   │   ├── ExportGradeDialog.tsx      # Dialog xuất điểm
+│   │   ├── StudentManagementSection.tsx # Quản lý sinh viên
+│   │   ├── ExamManagementSection.tsx   # Quản lý bài kiểm tra
+│   │   ├── ClassSettingsSection.tsx    # Cài đặt lớp
+│   │   ├── StudentResultsCard.tsx      # Card kết quả sinh viên
+│   │   └── hooks.ts                    # Custom hooks
+│   ├── ScoreEntry/         # Components nhập điểm
+│   ├── Alert/              # Alert components
+│   ├── LoadingSpinner/     # Loading components
+│   └── ui/                 # Shadcn UI components
+├── pages/                  # Các trang chính
+│   ├── Login/             # Đăng nhập
+│   ├── Register/          # Đăng ký
+│   ├── Dashboard/         # Trang chủ
+│   ├── ClassDetail/       # Chi tiết lớp
+│   ├── Management/        # Quản lý hệ thống
+│   ├── StudentsManagement/ # Quản lý sinh viên
+│   ├── ScoreEntry/        # Nhập điểm từ scan
+│   └── ChangePassword/    # Đổi mật khẩu
+├── services/              # API services
+│   └── firestore.ts       # Firebase services
+├── types/                 # TypeScript type definitions
+├── styles/               # Global styles
+├── firebase-config.ts    # Firebase configuration
+└── main.tsx             # Entry point với Sonner Toaster
+```
 
-- **Code Quality**: ESLint + Prettierexport default defineConfig([
+## � Cài đặt và chạy
 
-## ✨ Tính năng
+### Yêu cầu hệ thống
 
-  globalIgnores(['dist']),
+- **Node.js** >= 18.0.0
+- **npm** hoặc **yarn**
+- **Firebase project** đã cấu hình
 
-- Đăng nhập giảng viên
-
-- Xem danh sách lớp học## 📁 Cấu trúc dự án  {
-
-- Chi tiết sinh viên trong lớp
-
-- Thống kê GPA    files: ['**/*.{ts,tsx}'],
-
-```    extends: [
-
-src/      // Other configs...
-
-├── components/          # Components tái sử dụng
-
-│   ├── ClassList/      # Component danh sách lớp học      // Remove tseslint.configs.recommended and replace with this
-
-│   └── StudentList/    # Component danh sách sinh viên      tseslint.configs.recommendedTypeChecked,
-
-├── pages/              # Các trang chính      // Alternatively, use this for stricter rules
-
-│   ├── Login/          # Trang đăng nhập      tseslint.configs.strictTypeChecked,
-
-│   └── Dashboard/      # Trang dashboard      // Optionally, add this for stylistic rules
-
-├── styles/             # Global styles      tseslint.configs.stylisticTypeChecked,
-
-│   ├── App.css
-
-│   └── index.css      // Other configs...
-
-├── App.tsx             # Component root với routing    ],
-
-└── main.tsx           # Entry point    languageOptions: {
-
-```      parserOptions: {
-
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-
-## 🛠️ Cài đặt và chạy        tsconfigRootDir: import.meta.dirname,
-
-      },
-
-### Yêu cầu hệ thống      // other options...
-
-- Node.js >= 18.0.0    },
-
-- npm hoặc yarn  },
-
-])
-
-### Cài đặt dependencies```
+### Cài đặt dependencies
 
 ```bash
+npm install
+```
 
-npm installYou can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Chạy development server
 
-````
+```bash
+npm run dev
+```
 
-````js
+Ứng dụng sẽ chạy tại: `http://localhost:5173`
 
-### Chạy development server// eslint.config.js
+### Build cho production
 
-```bashimport reactX from 'eslint-plugin-react-x'
+```bash
+npm run build
+```
 
-npm run devimport reactDom from 'eslint-plugin-react-dom'
+### Preview production build
 
-````
-
-export default defineConfig([
-
-Ứng dụng sẽ chạy tại: `http://localhost:5173` globalIgnores(['dist']),
-
-{
-
-### Build cho production files: ['**/*.{ts,tsx}'],
-
-````bash extends: [
-
-npm run build      // Other configs...
-
-```      // Enable lint rules for React
-
-      reactX.configs['recommended-typescript'],
-
-### Preview production build      // Enable lint rules for React DOM
-
-```bash      reactDom.configs.recommended,
-
-npm run preview    ],
-
-```    languageOptions: {
-
-      parserOptions: {
-
-## 🔑 Tài khoản đăng nhập        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-
-        tsconfigRootDir: import.meta.dirname,
-
-```      },
-
-Tài khoản: admin      // other options...
-
-Mật khẩu: admin    },
-
-```  },
-
-])
-
-## 📋 Chức năng chi tiết```
-
-
-### Trang Đăng nhập
-- Form đăng nhập với validation
-- Kiểm tra tài khoản/mật khẩu
-- Lưu trạng thái đăng nhập trong localStorage
-
-### Dashboard
-- **Danh sách lớp học**: Hiển thị các lớp với thông tin cơ bản
-  - Tên lớp học
-  - Mã môn học
-  - Kỳ học
-  - Số lượng sinh viên
-- **Chi tiết lớp học**: Khi click vào lớp sẽ hiển thị
-  - Danh sách sinh viên với thông tin đầy đủ
-  - GPA của từng sinh viên (màu sắc theo điểm số)
-  - Trạng thái học tập (Đang học/Nghỉ học)
-  - Thống kê tổng quan
-
-### Thông tin sinh viên
-- Mã sinh viên
-- Họ tên
-- Email
-- Số điện thoại
-- Ngành học
-- GPA (điểm trung bình)
-- Trạng thái học tập
-
-## 🎨 Thiết kế UI
-
-- **Responsive Design**: Hoạt động tốt trên desktop và mobile
-- **Modern UI**: Gradient backgrounds, glassmorphism effects
-- **Interactive Elements**: Hover effects, animations
-- **Color Coding**: GPA được hiển thị với màu sắc trực quan
+```bash
+npm run preview
+```
 
 ## 🔧 Scripts có sẵn
 
@@ -296,21 +253,187 @@ npm run build        # Build cho production
 npm run preview      # Preview production build
 npm run lint         # Chạy ESLint
 npm run format       # Format code với Prettier
-````
+```
 
-## 🌟 Tính năng sắp tới
+## 📋 Chức năng chi tiết
 
-- [ ] Kết nối API backend thực tế
-- [ ] Thêm/chỉnh sửa thông tin sinh viên
-- [ ] Upload và quản lý điểm số
-- [ ] Xuất báo cáo PDF
-- [ ] Tìm kiếm và lọc sinh viên
-- [ ] Dark mode
+### � Dashboard - Trang chủ
+
+- **Thống kê tổng quan**: Hiển thị tổng số lớp học và sinh viên
+- **Danh sách lớp**: Grid view với thông tin lớp học
+- **Navigation**: Điều hướng đến các trang quản lý
+- **Profile menu**: Đổi mật khẩu, đăng xuất
+
+### 👨‍🎓 Chi tiết lớp học (/class/:classId)
+
+- **3 tab chính**:
+  - **Sinh viên**: Quản lý sinh viên trong lớp
+  - **Bài kiểm tra**: Xem danh sách exam và submissions
+  - **Cài đặt**: Đổi tên lớp, xóa lớp
+- **Thống kê**: Số sinh viên, số bài kiểm tra hoàn thành
+- **Xuất điểm**: Export CSV với điểm tổng kết có trọng số
+- **Quản lý enrollment**: Thêm/bỏ sinh viên khỏi lớp
+
+### 📊 Nhập điểm (/score-entry)
+
+- **Chọn lớp và bài kiểm tra**: Dropdown selector
+- **Kết nối máy scan**: Hiển thị trạng thái online/offline
+- **Bảng kết quả scan**: Realtime data từ Python scanner
+- **Chỉnh sửa kết quả**: Sửa tên, MSSV, điểm số
+- **Xem ảnh bài thi**: Preview modal cho ảnh scan
+- **Nhập thủ công**: Thêm điểm bằng tay
+- **Lưu vào Firestore**: Batch save tất cả điểm
+
+### 🎯 Quản lý sinh viên (/students)
+
+- **Bảng danh sách**: Tất cả sinh viên với thông tin đầy đủ
+- **CRUD operations**: Tạo, sửa, xóa sinh viên
+- **Form validation**: Kiểm tra MSSV, email, số điện thoại
+- **Tìm kiếm**: Search theo tên hoặc MSSV
+
+### ⚙️ Quản lý hệ thống (/management)
+
+- **Quản lý lớp học**: CRUD operations cho classes
+- **Phân quyền giảng viên**: Assign teacher cho từng lớp
+- **Bulk operations**: Thao tác hàng loạt
+
+## 🔧 Tích hợp máy scan Python
+
+### Cách hoạt động
+
+1. **Python scanner** scan bài thi và gửi kết quả lên Firebase Realtime DB
+2. **React app** lắng nghe realtime updates
+3. **Giảng viên** review và chỉnh sửa kết quả nếu cần
+4. **Lưu điểm** vào Firestore với thông tin student và exam
+
+### Định dạng dữ liệu scan
+
+```json
+{
+  "exam_results": {
+    "result_id": {
+      "ho_ten": "Nguyễn Văn A",
+      "mssv": "20210001",
+      "diem": 8.5,
+      "create_at": "2024-01-15T10:30:00Z",
+      "image_data": "base64_image_string"
+    }
+  }
+}
+```
+
+## 🎨 Thiết kế UI/UX
+
+### Design System
+
+- **Shadcn/UI**: Component library với design tokens nhất quán
+- **Color Palette**: Blue/Indigo gradient chính, accent colors cho status
+- **Typography**: Inter font với hierarchy rõ ràng
+- **Spacing**: 4px grid system của Tailwind
+
+### Responsive Design
+
+- **Mobile-first**: Hoạt động tốt trên điện thoại
+- **Tablet optimization**: Layout tối ưu cho tablet
+- **Desktop enhancement**: Tận dụng không gian màn hình lớn
+
+### Accessibility
+
+- **Keyboard navigation**: Tất cả tương tác có thể dùng bàn phím
+- **Screen reader**: ARIA labels và semantic HTML
+- **Color contrast**: Đạt chuẩn WCAG AA
+
+## 🌟 Tính năng nâng cao
+
+### Xuất điểm thông minh
+
+- **Công thức có trọng số**: 0.1 × Đợt1 + 0.2 × Đợt2 + 0.2 × GiữaKỳ + 0.5 × CuốiKỳ
+- **Xử lý trùng lặp**: Chọn trung bình hoặc điểm cao nhất
+- **UTF-8 BOM**: Hỗ trợ tiếng Việt trong Excel
+- **Validation**: Kiểm tra dữ liệu trước khi xuất
+
+### Toast Notifications
+
+- **Sonner integration**: Thay thế alert() cũ
+- **Rich colors**: Success (green), Error (red), Info (blue)
+- **Close button**: Người dùng có thể đóng thông báo
+- **Position**: Top-right corner, không che giao diện
+
+### Component Architecture
+
+- **Separation of concerns**: Mỗi component có trách nhiệm rõ ràng
+- **Custom hooks**: Logic tái sử dụng được
+- **TypeScript strict**: Type safety ở mọi level
+- **Props interface**: Giao tiếp component rõ ràng
+
+## 🚀 Triển khai (Deployment)
+
+### Vercel (Recommended)
+
+1. **Connect repository**: Import từ GitHub
+2. **Environment variables**: Thêm Firebase config
+3. **Build settings**: Framework = Vite, Build = `npm run build`
+4. **Domain**: Custom domain nếu cần
+
+### Firebase Hosting
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase init hosting
+npm run build
+firebase deploy
+```
+
+## 🌟 Roadmap tương lai
+
+### Version 2.0
+
+- [ ] **Dark mode**: Chế độ tối hoàn chỉnh
+- [ ] **PDF export**: Xuất báo cáo PDF với charts
+- [ ] **Email notifications**: Gửi email thông báo điểm
+- [ ] **Mobile app**: React Native companion app
+
+### Version 2.1
+
+- [ ] **Advanced analytics**: Dashboard thống kê nâng cao
+- [ ] **Bulk import**: Import sinh viên từ Excel/CSV
+- [ ] **Grade curves**: Điều chỉnh điểm theo đường cong
+- [ ] **Attendance tracking**: Theo dõi điểm danh
+
+### Version 2.5
+
+- [ ] **Multi-language**: Hỗ trợ tiếng Anh
+- [ ] **Role-based access**: Phân quyền chi tiết
+- [ ] **API documentation**: REST API cho integration
+- [ ] **Webhook support**: Tích hợp với hệ thống khác
+
+## 📞 Hỗ trợ & Đóng góp
+
+### Báo lỗi (Bug Reports)
+
+- Sử dụng GitHub Issues
+- Mô tả chi tiết bước tái hiện
+- Kèm screenshot nếu có
+
+### Đóng góp code (Contributing)
+
+1. Fork repository
+2. Tạo feature branch
+3. Commit với message rõ ràng
+4. Tạo Pull Request
+
+### Liên hệ
+
+- GitHub: [@loc-iparamed](https://github.com/loc-iparamed)
+- Email: support@quickscore.com
 
 ## 📝 License
 
-Dự án này được phát triển cho mục đích học tập và demo.
+Dự án này được phát triển cho mục đích giáo dục và demo.
+
+**MIT License** - Sử dụng tự do cho mục đích học tập và phát triển.
 
 ## 👨‍💻 Tác giả
 
-Được phát triển như một dự án demo cho hệ thống quản lý sinh viên trường đại học.
+Được phát triển bởi đội ngũ phát triển tại **Quick Score Team** như một dự án demo hoàn chỉnh cho hệ thống quản lý sinh viên và điểm số trường đại học hiện đại.

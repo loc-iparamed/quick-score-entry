@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "quick-score-entry",
+    "quick-score-entry": "quick-score-entry"
+  },
+  "targets": {},
+  "etags": {}
+}

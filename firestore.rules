@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Chỉ cho phép người dùng đã đăng nhập
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Quy tắc cho collection `users`
+    match /users/{userId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Quy tắc cho collection `classes`
+    match /classes/{classId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Quy tắc cho collection `students`
+    match /students/{studentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Quy tắc cho collection `enrollments`
+    match /enrollments/{enrollId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Quy tắc cho collection `exams`
+    match /exams/{examId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Quy tắc cho collection `submissions`
+    match /submissions/{submissionId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
