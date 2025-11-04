@@ -118,20 +118,14 @@ export const xiaozhiAgent = functions.https.onRequest(async (req, res) => {
 /**
  * HÀM NGHIỆP VỤ 1: Cập nhật điểm số
  *
- * *** GIẢ ĐỊNH QUAN TRỌNG VỀ CẤU TRÚC DATABASE ***
- * (Dựa trên file README.md của bạn)
+ * *** CẤU TRÚC DATABASE THỰC TẾ ***
+ * Dựa trên types và indexes:
  *
- * 1. Collection `students`:
- * - Có trường `ho_ten` (ví dụ: "Nguyễn Văn A")
- * - Có trường `mssv` (ví dụ: "20210001")
- *
- * 2. Collection `exams`: (Bạn cần tạo collection này)
- * - Có trường `ten_bai_kt` (ví dụ: "Giữa Kỳ")
- *
- * 3. Collection `submissions`:
- * - Dùng để lưu điểm.
- * - ID của document là sự kết hợp: `${mssv}_${examId}`
- * - Có các trường: `studentId` (là MSSV), `examId`, `diem`
+ * 1. Collection `students`: { id, mssv, fullName, email }
+ * 2. Collection `classes`: { id, name, semester, teacherId }
+ * 3. Collection `enrollments`: { id, classId, studentId } - Nối sinh viên với lớp
+ * 4. Collection `exams`: { id, classId, name, date, maxScore }
+ * 5. Collection `submissions`: { id, examId, classId, studentId, score }
  */
 async function handleUpdateScore(studentName: string, examName: string, newScore: number): Promise<string> {
   // Kiểm tra đầu vào
@@ -140,44 +134,102 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
   }
 
   try {
-    // 1. Tìm Sinh viên (dựa vào tên)
-    const studentQuery = await db.collection('students').where('ho_ten', '==', studentName).limit(1).get()
+    // 1. Tìm sinh viên theo fullName
+    const studentQuery = await db.collection('students').where('fullName', '==', studentName).limit(1).get()
 
     if (studentQuery.empty) {
-      return `Xin lỗi, tôi không tìm thấy sinh viên nào tên là ${studentName}.`
+      // Debug: Lấy danh sách sinh viên để kiểm tra
+      const allStudents = await db.collection('students').limit(5).get()
+      let debugInfo = 'Danh sách một số sinh viên: '
+      allStudents.forEach(doc => {
+        const data = doc.data()
+        debugInfo += `"${data.fullName}" (${data.mssv}), `
+      })
+      return `Không tìm thấy sinh viên "${studentName}". ${debugInfo}`
     }
-    const studentDoc = studentQuery.docs[0]
-    const mssv = studentDoc.data().mssv // Lấy MSSV từ document
 
-    // 2. Tìm Bài thi (dựa vào tên)
-    const examQuery = await db
-      .collection('exams') // <-- Bạn cần tạo collection này
-      .where('ten_bai_kt', '==', examName)
+    const studentDoc = studentQuery.docs[0]
+    const studentData = studentDoc.data()
+    const studentId = studentDoc.id
+
+    // 2. Tìm lớp học mà sinh viên này tham gia (qua enrollments)
+    const enrollmentQuery = await db.collection('enrollments').where('studentId', '==', studentId).get()
+
+    if (enrollmentQuery.empty) {
+      return `Sinh viên ${studentName} chưa được đăng ký vào lớp học nào.`
+    }
+
+    // Lấy danh sách classId mà sinh viên tham gia
+    const classIds = enrollmentQuery.docs.map(doc => doc.data().classId)
+
+    // 3. Tìm bài thi trong các lớp học của sinh viên
+    let examDoc = null
+    let examClassId = null
+
+    for (const classId of classIds) {
+      const examQuery = await db
+        .collection('exams')
+        .where('classId', '==', classId)
+        .where('name', '==', examName)
+        .limit(1)
+        .get()
+
+      if (!examQuery.empty) {
+        examDoc = examQuery.docs[0]
+        examClassId = classId
+        break
+      }
+    }
+
+    if (!examDoc) {
+      // Debug: Lấy danh sách bài thi trong các lớp của sinh viên
+      let debugInfo = 'Danh sách bài thi trong các lớp của sinh viên: '
+      for (const classId of classIds) {
+        const examsInClass = await db.collection('exams').where('classId', '==', classId).limit(3).get()
+        examsInClass.forEach(doc => {
+          debugInfo += `"${doc.data().name}" (lớp: ${classId}), `
+        })
+      }
+      return `Không tìm thấy bài thi "${examName}" trong các lớp của sinh viên ${studentName}. ${debugInfo}`
+    }
+
+    const examId = examDoc.id
+
+    // 4. Tìm hoặc tạo submission
+    const submissionQuery = await db
+      .collection('submissions')
+      .where('examId', '==', examId)
+      .where('studentId', '==', studentId)
       .limit(1)
       .get()
 
-    if (examQuery.empty) {
-      return `Xin lỗi, tôi không tìm thấy bài kiểm tra nào tên là ${examName}.`
+    if (!submissionQuery.empty) {
+      // Cập nhật submission đã có
+      const submissionDoc = submissionQuery.docs[0]
+      await submissionDoc.ref.update({
+        score: newScore,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        verified: true,
+        status: 'verified',
+        source: 'xiaozhi_ai',
+      })
+    } else {
+      // Tạo submission mới
+      await db.collection('submissions').add({
+        examId: examId,
+        classId: examClassId,
+        studentId: studentId,
+        fullName: studentData.fullName,
+        score: newScore,
+        contentSummary: `Điểm cập nhật bởi XiaoZhi AI`,
+        verified: true,
+        status: 'verified',
+        extractedAt: admin.firestore.FieldValue.serverTimestamp(),
+        source: 'xiaozhi_ai',
+      })
     }
-    const examId = examQuery.docs[0].id // Lấy ID của bài thi
 
-    // 3. Cập nhật hoặc Tạo mới điểm trong 'submissions'
-    // Sử dụng ID tùy chỉnh để dễ dàng truy vấn
-    const submissionId = `${mssv}_${examId}`
-    const submissionRef = db.collection('submissions').doc(submissionId)
-
-    const submissionData = {
-      studentId: mssv, // Lưu lại MSSV
-      examId: examId, // Lưu lại ID bài thi
-      diem: newScore,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      source: 'xiaozhi_ai', // Ghi lại nguồn cập nhật
-    }
-
-    // set() với { merge: true } sẽ tạo mới nếu chưa có, hoặc ghi đè nếu đã có
-    await submissionRef.set(submissionData, { merge: true })
-
-    return `Đã cập nhật điểm ${examName} của sinh viên ${studentName} thành ${newScore}.`
+    return `Đã cập nhật điểm ${examName} của sinh viên ${studentName} (${studentData.mssv}) thành ${newScore} điểm.`
   } catch (err: any) {
     console.error('Lỗi trong handleUpdateScore:', err)
     return `Đã xảy ra lỗi khi cập nhật điểm: ${err.message}.`
@@ -193,35 +245,84 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
   }
 
   try {
-    // 1. Tìm sinh viên
-    const studentQuery = await db.collection('students').where('ho_ten', '==', studentName).limit(1).get()
+    // 1. Tìm sinh viên theo fullName
+    const studentQuery = await db.collection('students').where('fullName', '==', studentName).limit(1).get()
 
     if (studentQuery.empty) {
-      return `Xin lỗi, tôi không tìm thấy sinh viên nào tên là ${studentName}.`
+      // Debug: Lấy danh sách sinh viên để kiểm tra
+      const allStudents = await db.collection('students').limit(5).get()
+      let debugInfo = 'Danh sách một số sinh viên: '
+      allStudents.forEach(doc => {
+        const data = doc.data()
+        debugInfo += `"${data.fullName}" (${data.mssv}), `
+      })
+      return `Không tìm thấy sinh viên "${studentName}". ${debugInfo}`
     }
 
-    const studentData = studentQuery.docs[0].data()
-    const mssv = studentData.mssv
+    const studentDoc = studentQuery.docs[0]
+    const studentData = studentDoc.data()
+    const studentId = studentDoc.id
 
-    // 2. Lấy tất cả điểm của sinh viên đó
-    const submissionsQuery = await db.collection('submissions').where('studentId', '==', mssv).get()
+    // 2. Lấy danh sách lớp học của sinh viên
+    const enrollmentQuery = await db.collection('enrollments').where('studentId', '==', studentId).get()
+
+    if (enrollmentQuery.empty) {
+      return `Sinh viên ${studentName} (${studentData.mssv}) chưa được đăng ký vào lớp học nào.`
+    }
+
+    const classIds = enrollmentQuery.docs.map(doc => doc.data().classId)
+
+    // 3. Lấy tên các lớp học
+    const classNames = []
+    for (const classId of classIds) {
+      const classDoc = await db.collection('classes').doc(classId).get()
+      if (classDoc.exists) {
+        const classData = classDoc.data()
+        classNames.push(`${classData?.name} (${classData?.semester})`)
+      }
+    }
+
+    // 4. Lấy tất cả điểm của sinh viên trong các lớp
+    const submissionsQuery = await db.collection('submissions').where('studentId', '==', studentId).get()
 
     if (submissionsQuery.empty) {
-      return `Sinh viên ${studentName}, mã số ${mssv}, hiện chưa có điểm nào trong hệ thống.`
+      return `Sinh viên ${studentName}, mã số ${studentData.mssv}, đang học ${classNames.join(', ')} nhưng chưa có điểm nào.`
     }
 
-    // 3. Tổng hợp kết quả để nói
-    let scoreText = ''
-    const scoreCount = submissionsQuery.size
+    // 5. Lấy thông tin chi tiết về điểm và bài thi
+    const scoreDetails = []
+    for (const submissionDoc of submissionsQuery.docs) {
+      const submission = submissionDoc.data()
 
-    // Lặp qua các điểm (đang thiếu tên bài thi, cần query thêm nếu muốn)
-    submissionsQuery.forEach(doc => {
-      const score = doc.data()
-      // Tạm thời chỉ đọc điểm
-      scoreText += `... có một điểm là ${score.diem} ... `
-    })
+      // Lấy thông tin bài thi
+      const examDoc = await db.collection('exams').doc(submission.examId).get()
+      if (examDoc.exists) {
+        const examData = examDoc.data()
 
-    return `Sinh viên ${studentName}, mã số ${mssv}, đã có tổng cộng ${scoreCount} cột điểm. ${scoreText}`
+        // Lấy thông tin lớp học
+        const classDoc = await db.collection('classes').doc(submission.classId).get()
+        const className = classDoc.exists ? classDoc.data()?.name : 'Unknown'
+
+        scoreDetails.push({
+          examName: examData?.name,
+          className: className,
+          score: submission.score,
+          maxScore: examData?.maxScore,
+        })
+      }
+    }
+
+    // 6. Tạo câu trả lời
+    let response = `Sinh viên ${studentName}, mã số ${studentData.mssv}, đang học ${classNames.join(', ')}.`
+
+    if (scoreDetails.length > 0) {
+      response += ` Có ${scoreDetails.length} bài kiểm tra: `
+      scoreDetails.forEach(detail => {
+        response += `${detail.examName} (${detail.className}): ${detail.score}/${detail.maxScore} điểm; `
+      })
+    }
+
+    return response
   } catch (err: any) {
     console.error('Lỗi trong handleGetStudentInfo:', err)
     return `Đã xảy ra lỗi khi tra cứu thông tin: ${err.message}.`
