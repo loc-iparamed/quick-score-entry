@@ -2,6 +2,17 @@
 
 Ứng dụng web hiện đại dành cho giảng viên, cung cấp giải pháp toàn diện để quản lý lớp học, sinh viên và điểm số với tích hợp máy scan tự động thông minh.
 
+## 🔒 Chính Sách Bảo Mật
+
+Hệ thống áp dụng **chính sách bảo mật nghiêm ngặt** để bảo vệ dữ liệu sinh viên:
+
+- **Firestore Database**: Dữ liệu chính thức, CHỈ đọc và cập nhật điểm
+- **Realtime Database**: Dữ liệu tạm thời, có thể chỉnh sửa tự do
+- **Không tạo sinh viên mới** qua giao diện nhập điểm
+- **Voice AI Integration**: Tra cứu danh sách sinh viên và cập nhật điểm với bảo mật từ khóa
+
+📋 **Xem chi tiết**: [SECURITY_POLICY.md](./SECURITY_POLICY.md)
+
 ## 🚀 Cài đặt và Chạy
 
 ### 1. Clone repository
