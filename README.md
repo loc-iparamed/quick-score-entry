@@ -144,33 +144,67 @@ Mật khẩu: admin123
 ## 📁 Cấu trúc dự án
 
 ```
-src/
-├── components/              # Components tái sử dụng
-│   ├── ClassList/          # Component danh sách lớp học
-│   ├── StudentList/        # Component chi tiết sinh viên lớp
-│   │   ├── ExportGradeDialog.tsx      # Dialog xuất điểm
-│   │   ├── StudentManagementSection.tsx # Quản lý sinh viên
-│   │   ├── ExamManagementSection.tsx   # Quản lý bài kiểm tra
-│   │   ├── ClassSettingsSection.tsx    # Cài đặt lớp
-│   │   ├── StudentResultsCard.tsx      # Card kết quả sinh viên
-│   │   └── hooks.ts                    # Custom hooks
-│   ├── ScoreEntry/         # Components nhập điểm
-│   ├── Alert/              # Alert components
-│   ├── LoadingSpinner/     # Loading components
-│   └── ui/                 # Shadcn UI components
-├── pages/                  # Các trang chính
-│   ├── Login/             # Đăng nhập
-│   ├── Register/          # Đăng ký
-│   ├── Dashboard/         # Trang chủ
-│   ├── ClassDetail/       # Chi tiết lớp
-│   ├── Management/        # Quản lý hệ thống
-│   ├── StudentsManagement/ # Quản lý sinh viên
-│   ├── ScoreEntry/        # Nhập điểm từ scan
-│   └── ChangePassword/    # Đổi mật khẩu
-├── services/              # API services
-│   └── firestore.ts       # Firebase services
-├── types/                 # TypeScript type definitions
-├── styles/               # Global styles
-├── firebase-config.ts    # Firebase configuration
-└── main.tsx             # Entry point với Sonner Toaster
+./                          # Root của repository
+├── .mcp.json              # Cấu hình MCP (Model Context Protocol)
+├── firebase-config.ts     # Firebase configuration root
+├── functions/             # Firebase Cloud Functions (Backend)
+│   ├── src/
+│   │   └── index.ts      # XiaoZhi AI agent & scan result functions
+│   ├── package.json
+│   └── tsconfig.json
+├── server-mcp/            # Python MCP clients & ESP32 integration
+│   ├── mcp_client.py     # MCP client implementation
+│   ├── config.py         # Server configuration
+│   ├── xiaozhi-esp32/    # ESP32 firmware code
+│   ├── requirements.txt
+│   └── README.md
+├── scripts/               # Utility scripts
+│   └── (cleanup_backups.py, remove_comments.py sẽ được thêm vào đây)
+├── public/                # Static assets
+│   └── vite.svg
+└── src/                   # React Frontend Application
+    ├── components/        # Components tái sử dụng
+    │   ├── ClassList/    # Component danh sách lớp học
+    │   ├── StudentList/  # Component chi tiết sinh viên lớp
+    │   │   ├── ExportGradeDialog.tsx      # Dialog xuất điểm
+    │   │   ├── StudentManagementSection.tsx # Quản lý sinh viên
+    │   │   ├── ExamManagementSection.tsx   # Quản lý bài kiểm tra
+    │   │   ├── ClassSettingsSection.tsx    # Cài đặt lớp
+    │   │   ├── StudentResultsCard.tsx      # Card kết quả sinh viên
+    │   │   └── hooks.ts                    # Custom hooks
+    │   ├── ScoreEntry/   # Components nhập điểm
+    │   ├── Alert/        # Alert components
+    │   ├── LoadingSpinner/ # Loading components
+    │   ├── ErrorBoundary/ # Error handling components
+    │   ├── SplashScreen/ # Splash screen component
+    │   └── ui/           # Shadcn UI components
+    │       ├── alert.tsx, badge.tsx, button.tsx, card.tsx
+    │       ├── dialog.tsx, form.tsx, input.tsx, label.tsx
+    │       ├── progress.tsx, select.tsx, separator.tsx
+    │       ├── table.tsx, tabs.tsx, avatar.tsx
+    │       └── variants.ts  # Shared CVA variant definitions
+    ├── pages/            # Các trang chính
+    │   ├── Login/       # Đăng nhập
+    │   ├── Register/    # Đăng ký
+    │   ├── Dashboard/   # Trang chủ
+    │   ├── ClassDetail/ # Chi tiết lớp
+    │   ├── ClassesManagement/ # Quản lý danh sách lớp
+    │   ├── Management/  # Quản lý hệ thống
+    │   ├── StudentsManagement/ # Quản lý sinh viên
+    │   ├── ScoreEntry/  # Nhập điểm từ scan
+    │   └── ChangePassword/ # Đổi mật khẩu
+    ├── services/        # API services
+    │   └── firestore.ts # Firebase Firestore & Realtime DB services
+    ├── types/           # TypeScript type definitions
+    ├── lib/             # Utility functions & helpers
+    ├── styles/          # Global styles
+    │   ├── App.css
+    │   └── index.css
+    ├── assets/          # Images, icons
+    │   └── react.svg
+    ├── firebase-config.ts # Firebase config for frontend
+    └── main.tsx         # Entry point với Sonner Toaster
+
+**Lưu ý:**
+- `functions/`: Backend code chạy trên Firebase Cloud Functions
 ```
