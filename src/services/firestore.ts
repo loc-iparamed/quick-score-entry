@@ -35,7 +35,17 @@ import type {
   ScannerStatus,
 } from '../types'
 
-// Collection names
+export type RealtimeScanResultPayload = {
+  fullName?: string
+  studentId?: string
+  score?: number
+  timestamp?: string
+  image_data?: string | null
+  clarity?: number
+  spacing?: number
+  straightness?: number
+}
+
 const COLLECTIONS = {
   USERS: 'users',
   CLASSES: 'classes',
@@ -45,7 +55,6 @@ const COLLECTIONS = {
   SUBMISSIONS: 'submissions',
 } as const
 
-// Internal function to delete submissions by studentId
 const deleteSubmissionsByStudentId = async (studentId: string): Promise<void> => {
   const q = query(collection(db, COLLECTIONS.SUBMISSIONS), where('studentId', '==', studentId))
   const querySnapshot = await getDocs(q)
@@ -60,9 +69,7 @@ const deleteSubmissionsByStudentId = async (studentId: string): Promise<void> =>
   }
 }
 
-// ============== USER SERVICES ==============
 export const userService = {
-  // Get all teachers
   async getAll(): Promise<User[]> {
     const querySnapshot = await getDocs(query(collection(db, COLLECTIONS.USERS), where('role', '==', 'teacher')))
     return querySnapshot.docs.map(doc => ({
@@ -71,14 +78,12 @@ export const userService = {
     })) as User[]
   },
 
-  // Get user by ID
   async getById(id: string): Promise<User | null> {
     const docSnapshot = await getDoc(doc(db, COLLECTIONS.USERS, id))
     if (!docSnapshot.exists()) return null
     return { id: docSnapshot.id, ...docSnapshot.data() } as User
   },
 
-  // Create new teacher
   async create(data: CreateUserData): Promise<string> {
     const docRef = await addDoc(collection(db, COLLECTIONS.USERS), {
       ...data,
@@ -87,20 +92,16 @@ export const userService = {
     return docRef.id
   },
 
-  // Update teacher
   async update(id: string, data: Partial<CreateUserData>): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.USERS, id), data)
   },
 
-  // Delete teacher
   async delete(id: string): Promise<void> {
     await deleteDoc(doc(db, COLLECTIONS.USERS, id))
   },
 }
 
-// ============== CLASS SERVICES ==============
 export const classService = {
-  // Get all classes with optional filter
   async getAll(filter?: ClassFilter): Promise<Class[]> {
     let q = query(collection(db, COLLECTIONS.CLASSES), orderBy('createdAt', 'desc'))
 
@@ -118,14 +119,12 @@ export const classService = {
     })) as Class[]
   },
 
-  // Get class by ID
   async getById(id: string): Promise<Class | null> {
     const docSnapshot = await getDoc(doc(db, COLLECTIONS.CLASSES, id))
     if (!docSnapshot.exists()) return null
     return { id: docSnapshot.id, ...docSnapshot.data() } as Class
   },
 
-  // Create new class
   async create(data: CreateClassData): Promise<string> {
     const docRef = await addDoc(collection(db, COLLECTIONS.CLASSES), {
       ...data,
@@ -136,24 +135,20 @@ export const classService = {
     return docRef.id
   },
 
-  // Update class
   async update(id: string, data: Partial<CreateClassData>): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.CLASSES, id), data)
   },
 
-  // Delete class
   async delete(id: string): Promise<void> {
     await deleteDoc(doc(db, COLLECTIONS.CLASSES, id))
   },
 
-  // Update student count
   async updateStudentCount(classId: string, incrementValue: number): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.CLASSES, classId), {
       studentCount: increment(incrementValue),
     })
   },
 
-  // Update exam count
   async updateExamCount(classId: string, incrementValue: number): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.CLASSES, classId), {
       examCount: increment(incrementValue),
@@ -161,9 +156,7 @@ export const classService = {
   },
 }
 
-// ============== STUDENT SERVICES ==============
 export const studentService = {
-  // Get all students
   async getAll(): Promise<Student[]> {
     const q = query(collection(db, COLLECTIONS.STUDENTS), orderBy('fullName'))
 
@@ -174,14 +167,12 @@ export const studentService = {
     })) as Student[]
   },
 
-  // Get student by ID
   async getById(id: string): Promise<Student | null> {
     const docSnapshot = await getDoc(doc(db, COLLECTIONS.STUDENTS, id))
     if (!docSnapshot.exists()) return null
     return { id: docSnapshot.id, ...docSnapshot.data() } as Student
   },
 
-  // Get student by MSSV
   async getByMSSV(mssv: string): Promise<Student | null> {
     const q = query(collection(db, COLLECTIONS.STUDENTS), where('mssv', '==', mssv))
     const querySnapshot = await getDocs(q)
@@ -190,7 +181,6 @@ export const studentService = {
     return { id: doc.id, ...doc.data() } as Student
   },
 
-  // Create new student
   async create(data: CreateStudentData): Promise<string> {
     const docRef = await addDoc(collection(db, COLLECTIONS.STUDENTS), {
       ...data,
@@ -199,31 +189,24 @@ export const studentService = {
     return docRef.id
   },
 
-  // Update student
   async update(id: string, data: Partial<CreateStudentData>): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.STUDENTS, id), data)
   },
 
-  // Delete student
   async delete(id: string): Promise<void> {
-    // First delete all submissions for this student
     await deleteSubmissionsByStudentId(id)
 
     const batch = writeBatch(db)
 
-    // Delete student
     batch.delete(doc(db, COLLECTIONS.STUDENTS, id))
 
-    // Get all enrollments for this student
     const enrollmentsQuery = query(collection(db, COLLECTIONS.ENROLLMENTS), where('studentId', '==', id))
     const enrollmentsSnapshot = await getDocs(enrollmentsQuery)
 
-    // Delete all enrollments and update class student counts
     for (const enrollmentDoc of enrollmentsSnapshot.docs) {
       const enrollmentData = enrollmentDoc.data() as Enrollment
       batch.delete(enrollmentDoc.ref)
 
-      // Update class student count
       const classRef = doc(db, COLLECTIONS.CLASSES, enrollmentData.classId)
       batch.update(classRef, {
         studentCount: increment(-1),
@@ -234,9 +217,7 @@ export const studentService = {
   },
 }
 
-// ============== ENROLLMENT SERVICES ==============
 export const enrollmentService = {
-  // Get all enrollments with optional filter
   async getAll(filter?: EnrollmentFilter): Promise<Enrollment[]> {
     let q = query(collection(db, COLLECTIONS.ENROLLMENTS), orderBy('joinedAt', 'desc'))
 
@@ -254,18 +235,15 @@ export const enrollmentService = {
     })) as Enrollment[]
   },
 
-  // Create new enrollment
   async create(data: CreateEnrollmentData): Promise<string> {
     const batch = writeBatch(db)
 
-    // Add enrollment
     const enrollmentRef = doc(collection(db, COLLECTIONS.ENROLLMENTS))
     batch.set(enrollmentRef, {
       ...data,
       joinedAt: Timestamp.now(),
     })
 
-    // Update class student count
     const classRef = doc(db, COLLECTIONS.CLASSES, data.classId)
     batch.update(classRef, {
       studentCount: increment(1),
@@ -275,7 +253,6 @@ export const enrollmentService = {
     return enrollmentRef.id
   },
 
-  // Delete enrollment
   async delete(id: string): Promise<void> {
     const enrollmentDoc = await getDoc(doc(db, COLLECTIONS.ENROLLMENTS, id))
     if (!enrollmentDoc.exists()) throw new Error('Enrollment not found')
@@ -283,10 +260,8 @@ export const enrollmentService = {
     const enrollmentData = enrollmentDoc.data() as Enrollment
     const batch = writeBatch(db)
 
-    // Delete enrollment
     batch.delete(doc(db, COLLECTIONS.ENROLLMENTS, id))
 
-    // Update class student count
     const classRef = doc(db, COLLECTIONS.CLASSES, enrollmentData.classId)
     batch.update(classRef, {
       studentCount: increment(-1),
@@ -296,9 +271,7 @@ export const enrollmentService = {
   },
 }
 
-// ============== EXAM SERVICES ==============
 export const examService = {
-  // Get all exams with optional filter
   async getAll(filter?: ExamFilter): Promise<Exam[]> {
     let q = query(collection(db, COLLECTIONS.EXAMS), orderBy('date', 'desc'))
 
@@ -313,18 +286,15 @@ export const examService = {
     })) as Exam[]
   },
 
-  // Get exam by ID
   async getById(id: string): Promise<Exam | null> {
     const docSnapshot = await getDoc(doc(db, COLLECTIONS.EXAMS, id))
     if (!docSnapshot.exists()) return null
     return { id: docSnapshot.id, ...docSnapshot.data() } as Exam
   },
 
-  // Create new exam
   async create(data: CreateExamData): Promise<string> {
     const batch = writeBatch(db)
 
-    // Add exam
     const examRef = doc(collection(db, COLLECTIONS.EXAMS))
     batch.set(examRef, {
       ...data,
@@ -332,7 +302,6 @@ export const examService = {
       updatedAt: Timestamp.now(),
     })
 
-    // Update class exam count
     const classRef = doc(db, COLLECTIONS.CLASSES, data.classId)
     batch.update(classRef, {
       examCount: increment(1),
@@ -342,7 +311,6 @@ export const examService = {
     return examRef.id
   },
 
-  // Update exam
   async update(id: string, data: Partial<Omit<CreateExamData, 'date'> & { date?: Timestamp }>): Promise<void> {
     const updateData: Record<string, unknown> = { ...data }
     if ('date' in data && typeof data.date === 'string') {
@@ -354,7 +322,6 @@ export const examService = {
     })
   },
 
-  // Delete exam
   async delete(id: string): Promise<void> {
     const examDoc = await getDoc(doc(db, COLLECTIONS.EXAMS, id))
     if (!examDoc.exists()) throw new Error('Exam not found')
@@ -362,10 +329,8 @@ export const examService = {
     const examData = examDoc.data() as Exam
     const batch = writeBatch(db)
 
-    // Delete exam
     batch.delete(doc(db, COLLECTIONS.EXAMS, id))
 
-    // Update class exam count
     const classRef = doc(db, COLLECTIONS.CLASSES, examData.classId)
     batch.update(classRef, {
       examCount: increment(-1),
@@ -375,9 +340,7 @@ export const examService = {
   },
 }
 
-// ============== SUBMISSION SERVICES ==============
 export const submissionService = {
-  // Get all submissions with optional filter
   async getAll(filter?: SubmissionFilter): Promise<Submission[]> {
     let q = query(collection(db, COLLECTIONS.SUBMISSIONS), orderBy('extractedAt', 'desc'))
 
@@ -404,14 +367,12 @@ export const submissionService = {
     })) as Submission[]
   },
 
-  // Get submission by ID
   async getById(id: string): Promise<Submission | null> {
     const docSnapshot = await getDoc(doc(db, COLLECTIONS.SUBMISSIONS, id))
     if (!docSnapshot.exists()) return null
     return { id: docSnapshot.id, ...docSnapshot.data() } as Submission
   },
 
-  // Create new submission
   async create(data: CreateSubmissionData): Promise<string> {
     const docRef = await addDoc(collection(db, COLLECTIONS.SUBMISSIONS), {
       ...data,
@@ -422,17 +383,14 @@ export const submissionService = {
     return docRef.id
   },
 
-  // Update submission
   async update(id: string, data: Partial<Submission>): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.SUBMISSIONS, id), data)
   },
 
-  // Delete submission
   async delete(id: string): Promise<void> {
     await deleteDoc(doc(db, COLLECTIONS.SUBMISSIONS, id))
   },
 
-  // Verify submission
   async verify(id: string): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.SUBMISSIONS, id), {
       verified: true,
@@ -440,7 +398,6 @@ export const submissionService = {
     })
   },
 
-  // Update score
   async updateScore(id: string, score: number): Promise<void> {
     await updateDoc(doc(db, COLLECTIONS.SUBMISSIONS, id), {
       score,
@@ -448,7 +405,6 @@ export const submissionService = {
   },
 }
 
-// ============== SCANNER SERVICES ==============
 export const scannerService = {
   async getStatus(): Promise<ScannerStatus> {
     try {
@@ -476,7 +432,6 @@ export const scannerService = {
     callback: (data: Array<{ ho_ten: string; mssv: string; diem: number; create_at: string }>) => void,
   ): () => void {
     try {
-      // Validate inputs to avoid invalid characters
       const sanitizedClassId = classId.replace(/[.#$[\]]/g, '_')
       const sanitizedExamId = examId.replace(/[.#$[\]]/g, '_')
 
@@ -523,7 +478,6 @@ export const scannerService = {
     }
   },
 
-  // Phương thức để lắng nghe dữ liệu từ root (cho Python test)
   getScanResultsFromRoot(
     callback: (
       data: Array<{
@@ -533,6 +487,9 @@ export const scannerService = {
         create_at: string
         id: string
         image_data?: string
+        clarity?: number
+        spacing?: number
+        straightness?: number
       }>,
     ) => void,
   ): () => void {
@@ -556,9 +513,12 @@ export const scannerService = {
                     create_at: item.timestamp || new Date().toISOString(),
                     id: key,
                     image_data: item.image_data || null,
+                    clarity: item.clarity ? parseFloat(item.clarity) : undefined,
+                    spacing: item.spacing ? parseFloat(item.spacing) : undefined,
+                    straightness: item.straightness ? parseFloat(item.straightness) : undefined,
                   }
                 })
-                .filter(item => item.id) // Chỉ cần có ID là đủ
+                .filter(item => item.id)
 
               callback(resultsArray)
             } else {
@@ -584,23 +544,29 @@ export const scannerService = {
     }
   },
 
-  // Update scan result in Realtime Database (không thay đổi timestamp)
-  async updateScanResult(id: string, data: { ho_ten: string; mssv: string; diem: number }): Promise<void> {
+  async updateScanResult(
+    id: string,
+    data: { ho_ten: string; mssv: string; diem: number; clarity?: number; spacing?: number; straightness?: number },
+  ): Promise<void> {
     try {
       const resultRef = ref(realtimeDB, `exam_results/${id}`)
-      await update(resultRef, {
+      const payload: RealtimeScanResultPayload = {
         fullName: data.ho_ten,
         studentId: data.mssv,
         score: data.diem,
-        // Không cập nhật timestamp để giữ nguyên thời gian scan gốc
-      })
+      }
+
+      if (data.clarity !== undefined) payload.clarity = data.clarity
+      if (data.spacing !== undefined) payload.spacing = data.spacing
+      if (data.straightness !== undefined) payload.straightness = data.straightness
+
+      await update(resultRef, payload)
     } catch (err) {
       console.error('🔥 Error updating scan result:', err)
       throw err
     }
   },
 
-  // Delete scan result from Realtime Database
   async deleteScanResult(id: string): Promise<void> {
     try {
       const resultRef = ref(realtimeDB, `exam_results/${id}`)
@@ -611,7 +577,6 @@ export const scannerService = {
     }
   },
 
-  // Clear all scan results from Realtime Database
   async clearAllScanResults(): Promise<void> {
     try {
       const rootRef = ref(realtimeDB, 'exam_results')
@@ -622,17 +587,29 @@ export const scannerService = {
     }
   },
 
-  // Add manual scan result to Realtime Database
-  async addManualScanResult(data: { ho_ten: string; mssv: string; diem: number }): Promise<void> {
+  async addManualScanResult(data: {
+    ho_ten: string
+    mssv: string
+    diem: number
+    clarity?: number
+    spacing?: number
+    straightness?: number
+  }): Promise<void> {
     try {
       const resultRef = ref(realtimeDB, `exam_results/${Date.now()}_${data.mssv}`)
-      await update(resultRef, {
+      const payload: RealtimeScanResultPayload = {
         fullName: data.ho_ten,
         studentId: data.mssv,
         score: data.diem,
         timestamp: new Date().toISOString(),
         image_data: null,
-      })
+      }
+
+      if (data.clarity !== undefined) payload.clarity = data.clarity
+      if (data.spacing !== undefined) payload.spacing = data.spacing
+      if (data.straightness !== undefined) payload.straightness = data.straightness
+
+      await update(resultRef, payload)
     } catch (err) {
       console.error('🔥 Error adding manual scan result:', err)
       throw err

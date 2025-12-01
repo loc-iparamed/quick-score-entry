@@ -1,6 +1,4 @@
 import { Timestamp } from 'firebase/firestore'
-
-// User Interface (Teacher)
 export interface User {
   id: string
   fullName: string
@@ -9,7 +7,6 @@ export interface User {
   createdAt: Timestamp
 }
 
-// Class Interface
 export interface Class {
   id: string
   name: string
@@ -20,7 +17,6 @@ export interface Class {
   createdAt: Timestamp
 }
 
-// Student Interface
 export interface Student {
   id: string
   mssv: string
@@ -29,7 +25,6 @@ export interface Student {
   createdAt: Timestamp
 }
 
-// Enrollment Interface (Bảng nối lớp học - sinh viên)
 export interface Enrollment {
   id: string
   classId: string
@@ -37,7 +32,6 @@ export interface Enrollment {
   joinedAt: Timestamp
 }
 
-// Exam Interface
 export interface Exam {
   id: string
   classId: string
@@ -48,7 +42,6 @@ export interface Exam {
   updatedAt?: Timestamp
 }
 
-// Submission Interface
 export interface Submission {
   id: string
   examId: string
@@ -65,7 +58,6 @@ export interface Submission {
   ocrRaw?: Record<string, unknown>
 }
 
-// Form Data Types (để tạo mới)
 export interface CreateUserData {
   fullName: string
   email: string
@@ -105,7 +97,6 @@ export interface CreateSubmissionData {
   contentSummary: string
 }
 
-// Filter & Search Types
 export interface ClassFilter {
   teacherId?: string
   semester?: string

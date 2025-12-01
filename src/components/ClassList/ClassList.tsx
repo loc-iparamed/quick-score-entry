@@ -44,12 +44,7 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassSelect }) => {
               <span>{classItem.semester}</span>
             </div>
 
-            {/* {classItem.teacherName && (
-              <div className='flex items-center space-x-2 text-sm text-slate-600'>
-                <BookOpen className='w-4 h-4' />
-                <span>{classItem.teacherName}</span>
-              </div>
-            )} */}
+            {}
 
             <div className='flex items-center justify-between'>
               <div className='flex items-center space-x-2'>

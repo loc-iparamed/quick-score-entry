@@ -47,7 +47,6 @@ const StudentsManagement: React.FC = () => {
     }
   }
 
-  // Refresh students (without loading state)
   const refreshStudents = async () => {
     try {
       const data = await studentService.getAll()
@@ -62,7 +61,6 @@ const StudentsManagement: React.FC = () => {
     loadStudents()
   }, [])
 
-  // Get initials for avatar
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -79,7 +77,6 @@ const StudentsManagement: React.FC = () => {
     return 'N/A'
   }
 
-  // Filter students based on search term
   const filteredStudents = students.filter(
     student =>
       student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,15 +84,12 @@ const StudentsManagement: React.FC = () => {
       student.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     try {
-      // Auto-generate email from MSSV if not provided
       const emailToUse = formData.email || `${formData.mssv}@student.tdtu.edu.vn`
 
-      // Check if MSSV already exists (only for new students)
       if (!editingStudent) {
         const existingStudent = await studentService.getByMSSV(formData.mssv)
         if (existingStudent) {
@@ -110,10 +104,8 @@ const StudentsManagement: React.FC = () => {
       }
 
       if (editingStudent) {
-        // Update existing student
         await studentService.update(editingStudent.id, studentData)
       } else {
-        // Create new student
         await studentService.create(studentData)
       }
 
@@ -122,7 +114,6 @@ const StudentsManagement: React.FC = () => {
       setIsDialogOpen(false)
       setError(null)
 
-      // Notify Dashboard to reload data
       window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       setError(editingStudent ? 'Không thể cập nhật sinh viên' : 'Không thể tạo sinh viên')
@@ -130,7 +121,6 @@ const StudentsManagement: React.FC = () => {
     }
   }
 
-  // Handle edit
   const handleEdit = (student: Student) => {
     setEditingStudent(student)
     setFormData({
@@ -141,7 +131,6 @@ const StudentsManagement: React.FC = () => {
     setIsDialogOpen(true)
   }
 
-  // Handle delete
   const handleDelete = async (student: Student) => {
     if (!confirm(`Bạn có chắc muốn xóa sinh viên "${student.fullName}" (${student.mssv})?`)) {
       return
@@ -151,7 +140,6 @@ const StudentsManagement: React.FC = () => {
       await studentService.delete(student.id)
       await refreshStudents()
 
-      // Notify Dashboard to reload data
       window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       setError('Không thể xóa sinh viên')
@@ -159,14 +147,12 @@ const StudentsManagement: React.FC = () => {
     }
   }
 
-  // Reset form
   const resetForm = () => {
     setFormData({ mssv: '', fullName: '', email: '' })
     setEditingStudent(null)
     setError(null)
   }
 
-  // Handle dialog close
   const handleDialogClose = () => {
     setIsDialogOpen(false)
     resetForm()
@@ -182,7 +168,6 @@ const StudentsManagement: React.FC = () => {
 
   return (
     <div className='container mx-auto py-8 px-4 max-w-7xl'>
-      {/* Go Back Button */}
       <div className='mb-6'>
         <Link to='/'>
           <Button variant='outline' className='flex items-center gap-2 hover:bg-gray-50'>
@@ -192,7 +177,6 @@ const StudentsManagement: React.FC = () => {
         </Link>
       </div>
 
-      {/* Header */}
       <div className='mb-8'>
         <div className='flex items-center justify-between mb-6'>
           <div>
@@ -214,7 +198,7 @@ const StudentsManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Statistics Cards */}
+        {}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-8'>
           <Card className='bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300'>
             <CardContent className='p-6'>
@@ -244,14 +228,14 @@ const StudentsManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Alert */}
+      {}
       {error && (
         <Alert className='mb-6 border-red-200 bg-red-50'>
           <AlertDescription className='text-red-800'>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Main Card */}
+      {}
       <Card className='border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50'>
         <CardHeader>
           <div className='flex items-center justify-between'>
@@ -289,7 +273,7 @@ const StudentsManagement: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Avatar Preview */}
+                    {}
                     {formData.fullName && (
                       <div className='flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100'>
                         <Avatar className='h-16 w-16 shadow-md'>

@@ -52,11 +52,9 @@ const ClassDetail: React.FC<ClassDetailProps> = ({ onLogout }) => {
           teacherMap.set(teacher.id, teacher.fullName)
         })
 
-        // Tính toán studentCount từ enrollments
         const classEnrollments = enrollmentsData.filter(e => e.classId === currentClass.id)
         const studentCount = classEnrollments.length
 
-        // Tính toán examCount từ exams
         const classExams = examsData.filter(exam => exam.classId === currentClass.id)
         const examCount = classExams.length
 
@@ -103,11 +101,9 @@ const ClassDetail: React.FC<ClassDetailProps> = ({ onLogout }) => {
         teacherMap.set(teacher.id, teacher.fullName)
       })
 
-      // Tính toán studentCount từ enrollments
       const classEnrollments = enrollmentsData.filter(e => e.classId === currentClass.id)
       const studentCount = classEnrollments.length
 
-      // Tính toán examCount từ exams
       const classExams = examsData.filter(exam => exam.classId === currentClass.id)
       const examCount = classExams.length
 

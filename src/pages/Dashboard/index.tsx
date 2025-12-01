@@ -148,12 +148,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   />
                 </button>
 
-                {/* Dropdown Menu */}
+                {}
                 {isUserMenuOpen && (
                   <>
-                    {/* Backdrop */}
+                    {}
                     <div className='fixed inset-0 z-10' onClick={() => setIsUserMenuOpen(false)} />
-                    {/* Menu */}
+                    {}
                     <div className='absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 z-20 py-1'>
                       <div className='px-4 py-3 border-b border-slate-100'>
                         <p className='text-sm font-medium text-slate-900'>Giảng viên</p>
@@ -200,7 +200,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         )}
 
         <div className='space-y-6'>
-          {/* Quick Actions */}
+          {}
           <div className='bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-xl p-6 shadow-xl'>
             <div className='flex items-center justify-between max-w-4xl mx-auto'>
               <Link to='/students' className='group flex-1 mr-4'>
@@ -233,7 +233,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
           </div>
 
-          {/* Stats Cards */}
+          {}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
             <Card className='p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover-lift'>
               <div className='flex items-center justify-between'>
@@ -258,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
           <Separator />
 
-          {/* Main Content */}
+          {}
           <div>
             <div className='flex items-center justify-between mb-6'>
               <div>
@@ -276,7 +276,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
       </main>
 
-      {/* Splash Screen */}
+      {}
       {showSplashScreen && <SplashScreen onComplete={handleSplashComplete} targetPage={splashTarget} />}
     </div>
   )

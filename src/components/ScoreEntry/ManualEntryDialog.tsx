@@ -17,8 +17,18 @@ interface ManualEntryDialogProps {
     ho_ten: string
     mssv: string
     diem: number
+    clarity?: number
+    spacing?: number
+    straightness?: number
   }
-  onUpdateManualEntryData: (data: { ho_ten: string; mssv: string; diem: number }) => void
+  onUpdateManualEntryData: (data: {
+    ho_ten: string
+    mssv: string
+    diem: number
+    clarity?: number
+    spacing?: number
+    straightness?: number
+  }) => void
   isSaving: boolean
   onSave: () => void
 }
@@ -33,7 +43,14 @@ export const ManualEntryDialog = ({
 }: ManualEntryDialogProps) => {
   const handleClose = () => {
     onOpenChange(false)
-    onUpdateManualEntryData({ ho_ten: '', mssv: '', diem: 0 })
+    onUpdateManualEntryData({
+      ho_ten: '',
+      mssv: '',
+      diem: 0,
+      clarity: undefined,
+      spacing: undefined,
+      straightness: undefined,
+    })
   }
 
   return (
@@ -97,6 +114,72 @@ export const ManualEntryDialog = ({
               }
               className='col-span-3'
               placeholder='Nhập điểm (0-10)'
+            />
+          </div>
+
+          <div className='grid grid-cols-4 items-center gap-4'>
+            <Label htmlFor='manual-clarity' className='text-right'>
+              Nét viết
+            </Label>
+            <Input
+              id='manual-clarity'
+              type='number'
+              min='0'
+              max='10'
+              step='0.1'
+              value={manualEntryData.clarity ?? ''}
+              onChange={e =>
+                onUpdateManualEntryData({
+                  ...manualEntryData,
+                  clarity: e.target.value ? parseFloat(e.target.value) : undefined,
+                })
+              }
+              className='col-span-3'
+              placeholder='Điểm nét viết (0-10)'
+            />
+          </div>
+
+          <div className='grid grid-cols-4 items-center gap-4'>
+            <Label htmlFor='manual-spacing' className='text-right'>
+              Khoảng cách
+            </Label>
+            <Input
+              id='manual-spacing'
+              type='number'
+              min='0'
+              max='10'
+              step='0.1'
+              value={manualEntryData.spacing ?? ''}
+              onChange={e =>
+                onUpdateManualEntryData({
+                  ...manualEntryData,
+                  spacing: e.target.value ? parseFloat(e.target.value) : undefined,
+                })
+              }
+              className='col-span-3'
+              placeholder='Điểm khoảng cách (0-10)'
+            />
+          </div>
+
+          <div className='grid grid-cols-4 items-center gap-4'>
+            <Label htmlFor='manual-straightness' className='text-right'>
+              Thẳng hàng
+            </Label>
+            <Input
+              id='manual-straightness'
+              type='number'
+              min='0'
+              max='10'
+              step='0.1'
+              value={manualEntryData.straightness ?? ''}
+              onChange={e =>
+                onUpdateManualEntryData({
+                  ...manualEntryData,
+                  straightness: e.target.value ? parseFloat(e.target.value) : undefined,
+                })
+              }
+              className='col-span-3'
+              placeholder='Điểm thẳng hàng (0-10)'
             />
           </div>
         </div>

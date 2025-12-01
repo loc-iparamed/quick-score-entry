@@ -46,11 +46,9 @@ const ChangePassword: React.FC = () => {
         return
       }
 
-      // Re-authenticate user with current password
       const credential = EmailAuthProvider.credential(user.email, currentPassword)
       await reauthenticateWithCredential(user, credential)
 
-      // Update password
       await updatePassword(user, newPassword)
 
       setSuccess('Mật khẩu đã được thay đổi thành công!')

@@ -21,6 +21,9 @@ interface EditScanDialogProps {
     diem: number | null | undefined
     create_at: string
     image_data?: string
+    clarity?: number
+    spacing?: number
+    straightness?: number
   } | null
   onUpdateScanResult: (result: {
     id: string
@@ -29,6 +32,9 @@ interface EditScanDialogProps {
     diem: number | null | undefined
     create_at: string
     image_data?: string
+    clarity?: number
+    spacing?: number
+    straightness?: number
   }) => void
   isUpdating: boolean
   onSave: () => void
@@ -93,6 +99,9 @@ export const EditScanDialog = ({
       diem: null,
       create_at: '',
       image_data: undefined,
+      clarity: undefined,
+      spacing: undefined,
+      straightness: undefined,
     })
   }
 
@@ -170,6 +179,78 @@ export const EditScanDialog = ({
               />
             </div>
             {errors.diem && <p className='text-red-500 text-sm ml-[25%]'>{errors.diem}</p>}
+          </div>
+
+          <div className='grid gap-2'>
+            <div className='grid grid-cols-4 items-center gap-4'>
+              <Label htmlFor='edit-clarity' className='text-right'>
+                Nét viết
+              </Label>
+              <Input
+                id='edit-clarity'
+                type='number'
+                min='0'
+                max='10'
+                step='0.1'
+                value={editingScanResult?.clarity ?? ''}
+                onChange={e =>
+                  onUpdateScanResult({
+                    ...editingScanResult!,
+                    clarity: e.target.value ? parseFloat(e.target.value) : undefined,
+                  })
+                }
+                className='col-span-3'
+                placeholder='Điểm nét viết (0-10)'
+              />
+            </div>
+          </div>
+
+          <div className='grid gap-2'>
+            <div className='grid grid-cols-4 items-center gap-4'>
+              <Label htmlFor='edit-spacing' className='text-right'>
+                Khoảng cách
+              </Label>
+              <Input
+                id='edit-spacing'
+                type='number'
+                min='0'
+                max='10'
+                step='0.1'
+                value={editingScanResult?.spacing ?? ''}
+                onChange={e =>
+                  onUpdateScanResult({
+                    ...editingScanResult!,
+                    spacing: e.target.value ? parseFloat(e.target.value) : undefined,
+                  })
+                }
+                className='col-span-3'
+                placeholder='Điểm khoảng cách (0-10)'
+              />
+            </div>
+          </div>
+
+          <div className='grid gap-2'>
+            <div className='grid grid-cols-4 items-center gap-4'>
+              <Label htmlFor='edit-straightness' className='text-right'>
+                Thẳng hàng
+              </Label>
+              <Input
+                id='edit-straightness'
+                type='number'
+                min='0'
+                max='10'
+                step='0.1'
+                value={editingScanResult?.straightness ?? ''}
+                onChange={e =>
+                  onUpdateScanResult({
+                    ...editingScanResult!,
+                    straightness: e.target.value ? parseFloat(e.target.value) : undefined,
+                  })
+                }
+                className='col-span-3'
+                placeholder='Điểm thẳng hàng (0-10)'
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>

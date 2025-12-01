@@ -22,17 +22,16 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, targetPage }) =
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval)
-          setTimeout(onComplete, 150) // Short wait before completing
+          setTimeout(onComplete, 150)
           return 100
         }
-        return Math.min(prev + 4, 100) // Increase by 4% each time, cap at 100
+        return Math.min(prev + 4, 100)
       })
-    }, 40) // 40ms interval
+    }, 40)
 
-    // Cycle through icons
     const iconInterval = setInterval(() => {
       setCurrentIcon(prev => (prev + 1) % icons.length)
-    }, 550) // Moderate cycling speed
+    }, 550)
 
     return () => {
       clearInterval(interval)
@@ -57,7 +56,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, targetPage }) =
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'>
-      {/* Animated background particles */}
+      {}
       <div className='absolute inset-0 overflow-hidden'>
         {[...Array(20)].map((_, i) => (
           <div
@@ -73,9 +72,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, targetPage }) =
         ))}
       </div>
 
-      {/* Main content */}
+      {}
       <div className='relative z-10 text-center space-y-8'>
-        {/* 3D Animated Icon */}
+        {}
         <div className='relative mx-auto w-24 h-24'>
           <div
             className={`absolute inset-0 ${bgColor} rounded-2xl shadow-2xl transform rotate-45 animate-spin-slow`}
@@ -85,12 +84,12 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, targetPage }) =
             <Icon className={`w-10 h-10 text-white transform -rotate-45 animate-bounce`} />
           </div>
 
-          {/* Floating elements */}
+          {}
           <div className='absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-ping'></div>
           <div className='absolute -bottom-1 -left-1 w-3 h-3 bg-pink-400 rounded-full animate-pulse'></div>
         </div>
 
-        {/* Title */}
+        {}
         <div className='space-y-2'>
           <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent animate-fade-in'>
             {getPageTitle()}
@@ -98,7 +97,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, targetPage }) =
           <p className='text-slate-600 animate-fade-in-delayed'>Đang chuẩn bị...</p>
         </div>
 
-        {/* Progress bar */}
+        {}
         <div className='w-64 mx-auto space-y-3'>
           <div className='w-full bg-slate-200 rounded-full h-2 overflow-hidden'>
             <div
@@ -109,7 +108,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, targetPage }) =
           <p className='text-sm text-slate-500'>{progress}%</p>
         </div>
 
-        {/* Animated dots */}
+        {}
         <div className='flex justify-center space-x-2'>
           {[0, 1, 2].map(i => (
             <div
@@ -121,7 +120,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, targetPage }) =
         </div>
       </div>
 
-      {/* Gradient overlay */}
+      {}
       <div className='absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10 pointer-events-none'></div>
     </div>
   )

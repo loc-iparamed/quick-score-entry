@@ -43,6 +43,9 @@ const ScoreEntry = () => {
       create_at: string
       id: string
       image_data?: string
+      clarity?: number
+      spacing?: number
+      straightness?: number
     }>
   >([])
   const [scanLoading, setScanLoading] = useState(false)
@@ -63,13 +66,26 @@ const ScoreEntry = () => {
     diem: number | null | undefined
     create_at: string
     image_data?: string
+    clarity?: number
+    spacing?: number
+    straightness?: number
   } | null>(null)
   const [isUpdatingScan, setIsUpdatingScan] = useState(false)
   const [showManualEntryDialog, setShowManualEntryDialog] = useState(false)
-  const [manualEntryData, setManualEntryData] = useState({
+  const [manualEntryData, setManualEntryData] = useState<{
+    ho_ten: string
+    mssv: string
+    diem: number
+    clarity?: number
+    spacing?: number
+    straightness?: number
+  }>({
     ho_ten: '',
     mssv: '',
     diem: 0,
+    clarity: undefined,
+    spacing: undefined,
+    straightness: undefined,
   })
   const [isSavingManual, setIsSavingManual] = useState(false)
 
@@ -101,10 +117,9 @@ const ScoreEntry = () => {
       try {
         setExamLoading(true)
         setError(null)
-        // Load current exams
+
         const existing = await examService.getAll({ classId: selectedClassId })
 
-        // Ensure 4 default exams exist; create missing ones
         const existingNames = new Set(existing.map(e => e.name))
         for (const name of DEFAULT_EXAM_NAMES) {
           if (!existingNames.has(name)) {
@@ -117,7 +132,6 @@ const ScoreEntry = () => {
           }
         }
 
-        // Reload and filter only default exams, ordered as defined
         const refreshed = await examService.getAll({ classId: selectedClassId })
         const filtered = refreshed
           .filter(e => DEFAULT_EXAM_NAMES.includes(e.name as (typeof DEFAULT_EXAM_NAMES)[number]))
@@ -150,7 +164,6 @@ const ScoreEntry = () => {
     const loadData = async () => {
       try {
         setError(null)
-        // Load basic data if needed for other purposes
       } catch (err) {
         console.error(err)
         setError('Không thể tải dữ liệu')
@@ -186,52 +199,43 @@ const ScoreEntry = () => {
       setError(null)
       setMessage(null)
 
-      // Kiểm tra sinh viên không tồn tại
       const missingStudents: Array<{ ho_ten: string; mssv: string; diem: number | null }> = []
       const existingStudentMap = new Map<string, Student>()
 
-      // Kiểm tra từng sinh viên - Validation đầy đủ trước khi lưu
       for (const result of scanResults) {
-        // Kiểm tra họ tên
         if (!result.ho_ten || !result.ho_ten.trim()) {
           setError(`Thiếu họ tên cho sinh viên MSSV: ${result.mssv || 'Chưa có MSSV'}`)
           setIsSaving(false)
           return
         }
 
-        // Kiểm tra MSSV
         if (!result.mssv || !result.mssv.trim()) {
           setError(`Thiếu MSSV cho sinh viên: ${result.ho_ten}`)
           setIsSaving(false)
           return
         }
 
-        // Kiểm tra độ dài MSSV (tối đa 8 ký tự)
         if (result.mssv.trim().length > 8) {
           setError(`MSSV của ${result.ho_ten} (${result.mssv}) không được quá 8 ký tự`)
           setIsSaving(false)
           return
         }
 
-        // Kiểm tra điểm
         if (result.diem === null || result.diem === undefined) {
           setError(`Điểm của ${result.ho_ten} (${result.mssv}) chưa được nhập`)
           setIsSaving(false)
           return
         }
 
-        // Kiểm tra điểm phải ≤ 10 và ≥ 0
         if (result.diem < 0 || result.diem > 10) {
           setError(`Điểm của ${result.ho_ten} (${result.mssv}) phải trong khoảng 0 - 10`)
           setIsSaving(false)
           return
         }
 
-        // Kiểm tra sinh viên có tồn tại theo MSSV không
         const existingStudent = await studentService.getByMSSV(result.mssv)
 
         if (existingStudent) {
-          // Kiểm tra tên có khớp không
           if (existingStudent.fullName.toLowerCase().trim() !== result.ho_ten.toLowerCase().trim()) {
             setError(
               `MSSV ${result.mssv} đã tồn tại với tên "${existingStudent.fullName}" nhưng dữ liệu scan có tên "${result.ho_ten}". Vui lòng kiểm tra lại.`,
@@ -245,7 +249,6 @@ const ScoreEntry = () => {
         }
       }
 
-      // Nếu có sinh viên không tồn tại, hiển thị popup confirm
       if (missingStudents.length > 0) {
         const studentList = missingStudents.map(s => `- ${s.ho_ten} (${s.mssv})`).join('\n')
 
@@ -256,10 +259,8 @@ const ScoreEntry = () => {
           return
         }
 
-        // Tạo sinh viên mới và thêm vào lớp
         for (const missingStudent of missingStudents) {
           try {
-            // Tạo sinh viên mới
             const email = `${missingStudent.mssv}@student.tdtu.edu.vn`
             const newStudentId = await studentService.create({
               mssv: missingStudent.mssv,
@@ -267,13 +268,11 @@ const ScoreEntry = () => {
               email: email,
             })
 
-            // Thêm sinh viên vào lớp
             await enrollmentService.create({
               classId: selectedClassId,
               studentId: newStudentId,
             })
 
-            // Thêm vào map để sử dụng sau này
             existingStudentMap.set(missingStudent.mssv, {
               id: newStudentId,
               mssv: missingStudent.mssv,
@@ -290,7 +289,6 @@ const ScoreEntry = () => {
         }
       }
 
-      // Tạo submissions
       const operations: Promise<unknown>[] = []
 
       for (const result of scanResults) {
@@ -305,9 +303,9 @@ const ScoreEntry = () => {
           submissionService.create({
             examId: selectedExamId,
             classId: selectedClassId,
-            studentId: student.id, // Sử dụng studentId thực
+            studentId: student.id,
             fullName: result.ho_ten,
-            score: result.diem!, // Đã validate ở trên nên có thể dùng !
+            score: result.diem!,
             contentSummary: `Python scan result from ${result.create_at}`,
           }),
         )
@@ -315,7 +313,6 @@ const ScoreEntry = () => {
 
       await Promise.all(operations)
 
-      // Xóa sạch dữ liệu trong Realtime Database sau khi lưu thành công
       await scannerService.clearAllScanResults()
 
       const createdCount = missingStudents.length
@@ -326,7 +323,6 @@ const ScoreEntry = () => {
 
       setMessage(message)
 
-      // Notify other components to reload data
       window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       console.error('🎯 Error saving scores:', err)
@@ -344,6 +340,9 @@ const ScoreEntry = () => {
       diem: result.diem || 0,
       create_at: result.create_at,
       image_data: result.image_data,
+      clarity: result.clarity,
+      spacing: result.spacing,
+      straightness: result.straightness,
     })
     setShowEditScanDialog(true)
   }
@@ -371,6 +370,9 @@ const ScoreEntry = () => {
         ho_ten: editingScanResult.ho_ten,
         mssv: editingScanResult.mssv,
         diem: editingScanResult.diem || 0,
+        clarity: editingScanResult.clarity,
+        spacing: editingScanResult.spacing,
+        straightness: editingScanResult.straightness,
       })
 
       setMessage('Đã cập nhật kết quả scan thành công')
@@ -403,11 +405,21 @@ const ScoreEntry = () => {
         ho_ten: manualEntryData.ho_ten.trim(),
         mssv: manualEntryData.mssv.trim(),
         diem: manualEntryData.diem,
+        clarity: manualEntryData.clarity,
+        spacing: manualEntryData.spacing,
+        straightness: manualEntryData.straightness,
       })
 
       setMessage('Đã thêm kết quả scan thủ công thành công')
       setShowManualEntryDialog(false)
-      setManualEntryData({ ho_ten: '', mssv: '', diem: 0 })
+      setManualEntryData({
+        ho_ten: '',
+        mssv: '',
+        diem: 0,
+        clarity: undefined,
+        spacing: undefined,
+        straightness: undefined,
+      })
     } catch (err) {
       console.error('Error saving manual entry:', err)
       setError('Không thể lưu kết quả scan thủ công. Vui lòng thử lại')
@@ -451,13 +463,11 @@ const ScoreEntry = () => {
         date: new Date().toISOString(),
       })
 
-      // Reload exams
       const data = await examService.getAll({ classId: selectedClassId })
       setExams(data)
 
       setSelectedExamId(examId)
 
-      // Reset form
       setNewExamName('')
       setShowCreateExamDialog(false)
       setMessage('Tạo bài kiểm tra thành công')
@@ -482,7 +492,7 @@ const ScoreEntry = () => {
       await classService.create({
         name: newClassName.trim(),
         semester: newClassSemester.trim(),
-        teacherId: 'default-teacher', // Có thể để mặc định hoặc lấy từ user hiện tại
+        teacherId: 'default-teacher',
       })
 
       const data = await classService.getAll()

@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Loader2, Plus, Edit, Trash2, Image as ImageIcon, Eye } from 'lucide-react'
+import { Loader2, Plus, Edit, Trash2, Image as ImageIcon, Eye, PenTool } from 'lucide-react'
 import { useState } from 'react'
 import { ImagePreviewModal } from './ImagePreviewModal'
+import { HandwritingScoreModal } from './HandwritingScoreModal'
 
 interface ScanResult {
   ho_ten: string
@@ -12,6 +13,9 @@ interface ScanResult {
   create_at: string
   id: string
   image_data?: string
+  clarity?: number
+  spacing?: number
+  straightness?: number
 }
 
 interface ScanResultsTableProps {
@@ -39,6 +43,13 @@ export const ScanResultsTable = ({
 }: ScanResultsTableProps) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [showImagePreview, setShowImagePreview] = useState(false)
+  const [showHandwritingScore, setShowHandwritingScore] = useState(false)
+  const [selectedHandwritingData, setSelectedHandwritingData] = useState<{
+    clarity?: number
+    spacing?: number
+    straightness?: number
+    studentName?: string
+  } | null>(null)
 
   const handleImageClick = (imageData: string) => {
     setSelectedImage(imageData)
@@ -48,6 +59,21 @@ export const ScanResultsTable = ({
   const handleCloseImagePreview = () => {
     setShowImagePreview(false)
     setSelectedImage(null)
+  }
+
+  const handleHandwritingScoreClick = (result: ScanResult) => {
+    setSelectedHandwritingData({
+      clarity: result.clarity,
+      spacing: result.spacing,
+      straightness: result.straightness,
+      studentName: result.ho_ten,
+    })
+    setShowHandwritingScore(true)
+  }
+
+  const handleCloseHandwritingScore = () => {
+    setShowHandwritingScore(false)
+    setSelectedHandwritingData(null)
   }
 
   return (
@@ -138,7 +164,13 @@ export const ScanResultsTable = ({
                       Ảnh bài thi
                     </div>
                   </TableHead>
-                  <TableHead className='w-[20%] font-semibold text-slate-700 py-4 px-6'>
+                  <TableHead className='w-[10%] font-semibold text-slate-700 py-4 px-6 text-center'>
+                    <div className='flex items-center justify-center gap-2'>
+                      <div className='w-2 h-2 rounded-full bg-indigo-500'></div>
+                      Điểm viết tay
+                    </div>
+                  </TableHead>
+                  <TableHead className='w-[15%] font-semibold text-slate-700 py-4 px-6'>
                     <div className='flex items-center gap-2'>
                       <div className='w-2 h-2 rounded-full bg-orange-500'></div>
                       Thời gian scan
@@ -231,6 +263,31 @@ export const ScanResultsTable = ({
                           <div className='w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center'>
                             <ImageIcon className='h-3.5 w-3.5 text-slate-400' />
                           </div>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className='py-4 px-6 text-center'>
+                      {result.clarity != null || result.spacing != null || result.straightness != null ? (
+                        <div className='flex justify-center'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => handleHandwritingScoreClick(result)}
+                            className='h-8 w-8 p-0 border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200 shadow-sm'
+                            title='Xem điểm viết tay'
+                          >
+                            <Eye className='h-3.5 w-3.5 text-indigo-600' />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className='flex justify-center'>
+                          <button
+                            onClick={() => onEditScanResult(result)}
+                            className='w-8 h-8 rounded-full bg-slate-100 hover:bg-indigo-100 flex items-center justify-center transition-all duration-200 cursor-pointer'
+                            title='Nhập điểm viết tay'
+                          >
+                            <PenTool className='h-3.5 w-3.5 text-slate-400 hover:text-indigo-600' />
+                          </button>
                         </div>
                       )}
                     </TableCell>
@@ -339,6 +396,14 @@ export const ScanResultsTable = ({
       </div>
 
       <ImagePreviewModal isOpen={showImagePreview} imageData={selectedImage} onClose={handleCloseImagePreview} />
+      <HandwritingScoreModal
+        isOpen={showHandwritingScore}
+        onClose={handleCloseHandwritingScore}
+        clarity={selectedHandwritingData?.clarity}
+        spacing={selectedHandwritingData?.spacing}
+        straightness={selectedHandwritingData?.straightness}
+        studentName={selectedHandwritingData?.studentName}
+      />
     </Card>
   )
 }

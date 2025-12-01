@@ -3,14 +3,12 @@ import { examService, submissionService } from '@/services/firestore'
 import type { Student, Exam, Submission } from '@/types'
 import { toast } from 'sonner'
 
-// Hook for managing exam data and operations
 export const useExamManagement = (classId: string) => {
   const [classExams, setClassExams] = useState<Record<string, Exam>>({})
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null)
   const [examSubmissions, setExamSubmissions] = useState<Submission[]>([])
   const [examSubmissionsLoading, setExamSubmissionsLoading] = useState(false)
 
-  // Load exams for the class
   useEffect(() => {
     const loadExams = async () => {
       try {
@@ -31,7 +29,6 @@ export const useExamManagement = (classId: string) => {
     }
   }, [classId])
 
-  // Load submissions for selected exam
   useEffect(() => {
     const loadExamSubmissions = async () => {
       if (!selectedExam) {
@@ -73,14 +70,12 @@ export const useExamManagement = (classId: string) => {
   }
 }
 
-// Hook for managing student submissions and results
 export const useStudentSubmissions = () => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [studentSubmissions, setStudentSubmissions] = useState<Submission[]>([])
   const [submissionsLoading, setSubmissionsLoading] = useState(false)
   const [showStudentResults, setShowStudentResults] = useState(false)
 
-  // Load submissions for selected student
   useEffect(() => {
     const loadStudentSubmissions = async () => {
       if (!selectedStudent) {
@@ -128,7 +123,6 @@ export const useStudentSubmissions = () => {
   }
 }
 
-// Hook for managing class settings and operations
 export const useClassSettings = (classInfo: { id: string; name: string }, onBack: () => void) => {
   const [classNameEdit, setClassNameEdit] = useState<string>(classInfo.name)
   const [isRenamingClass, setIsRenamingClass] = useState(false)
@@ -137,10 +131,8 @@ export const useClassSettings = (classInfo: { id: string; name: string }, onBack
   const updateClassName = async (newName: string) => {
     setIsRenamingClass(true)
     try {
-      // This would need to be implemented in the classService
-      // await classService.update(classInfo.id, { name: newName })
       console.log('Update class name to:', newName)
-      // For now, just update local state
+
       setClassNameEdit(newName)
     } catch (error) {
       console.error('Error updating class name:', error)
@@ -153,10 +145,8 @@ export const useClassSettings = (classInfo: { id: string; name: string }, onBack
   const deleteClass = async () => {
     setIsDeletingClass(true)
     try {
-      // This would need to be implemented in the classService
-      // await classService.delete(classInfo.id)
       console.log('Delete class:', classInfo.id)
-      // Navigate back after deletion
+
       onBack()
     } catch (error) {
       console.error('Error deleting class:', error)
@@ -175,7 +165,6 @@ export const useClassSettings = (classInfo: { id: string; name: string }, onBack
   }
 }
 
-// Utility functions for formatting and display
 export const useDisplayUtils = () => {
   const formatDate = (timestamp?: { seconds: number; nanoseconds: number } | null): string => {
     if (!timestamp) return '--'
@@ -192,7 +181,6 @@ export const useDisplayUtils = () => {
   const formatExamDate = (timestamp?: Exam['date']): string => {
     if (!timestamp) return '--'
 
-    // Handle both Firestore timestamp and regular date
     if (typeof timestamp === 'object' && 'seconds' in timestamp) {
       const date = new Date(timestamp.seconds * 1000)
       return date.toLocaleString('vi-VN', {
@@ -204,20 +192,15 @@ export const useDisplayUtils = () => {
       })
     }
 
-    // Handle regular Date object or other formats
-    try {
-      const date = new Date(timestamp as string | number | Date)
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleString('vi-VN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      }
-    } catch {
-      // Fall through to default
+    const date = new Date(timestamp as string | number | Date)
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
     }
 
     return '--'

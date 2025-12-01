@@ -24,7 +24,6 @@ const StudentResultsCard: React.FC<StudentResultsCardProps> = ({
   className = '',
   showDetailedStats = true,
 }) => {
-  // Calculate statistics
   const totalSubmissions = submissions.length
   const scoresWithValues = submissions.filter(s => typeof s.score === 'number')
   const averageScore =
@@ -32,9 +31,8 @@ const StudentResultsCard: React.FC<StudentResultsCardProps> = ({
       ? scoresWithValues.reduce((sum, s) => sum + (s.score as number), 0) / scoresWithValues.length
       : 0
 
-  // Calculate weighted final score (0.1, 0.2, 0.2, 0.5)
   const weightedScore = (() => {
-    const scores = [0, 0, 0, 0] // Default scores for 4 exams
+    const scores = [0, 0, 0, 0]
     submissions.forEach((submission, index) => {
       if (index < 4 && typeof submission.score === 'number') {
         scores[index] = submission.score
@@ -43,7 +41,6 @@ const StudentResultsCard: React.FC<StudentResultsCardProps> = ({
     return scores[0] * 0.1 + scores[1] * 0.2 + scores[2] * 0.2 + scores[3] * 0.5
   })()
 
-  // Get performance level based on weighted score
   const getPerformanceLevel = (score: number) => {
     if (score >= 9) return { label: 'Xuất sắc', color: 'bg-green-500', textColor: 'text-green-700' }
     if (score >= 8) return { label: 'Giỏi', color: 'bg-blue-500', textColor: 'text-blue-700' }
@@ -77,7 +74,7 @@ const StudentResultsCard: React.FC<StudentResultsCardProps> = ({
       </CardHeader>
 
       <CardContent className='space-y-4'>
-        {/* Score Summary */}
+        {}
         <div className='grid grid-cols-2 gap-4'>
           <div className='text-center p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg'>
             <Trophy className='w-5 h-5 text-blue-600 mx-auto mb-1' />
@@ -93,7 +90,7 @@ const StudentResultsCard: React.FC<StudentResultsCardProps> = ({
 
         {showDetailedStats && (
           <>
-            {/* Submission Summary */}
+            {}
             <div className='flex items-center justify-between p-3 bg-slate-50 rounded-lg'>
               <div className='flex items-center gap-2'>
                 <BookOpen className='w-4 h-4 text-slate-600' />
@@ -102,7 +99,7 @@ const StudentResultsCard: React.FC<StudentResultsCardProps> = ({
               <Badge variant='secondary'>{totalSubmissions} bài</Badge>
             </div>
 
-            {/* Individual Exam Results */}
+            {}
             {submissions.length > 0 && (
               <div className='space-y-2'>
                 <h4 className='text-sm font-medium text-slate-700 mb-2 flex items-center gap-2'>
@@ -136,7 +133,7 @@ const StudentResultsCard: React.FC<StudentResultsCardProps> = ({
           </>
         )}
 
-        {/* No submissions message */}
+        {}
         {submissions.length === 0 && (
           <div className='text-center py-4 text-muted-foreground'>
             <BookOpen className='w-8 h-8 mx-auto mb-2 opacity-30' />

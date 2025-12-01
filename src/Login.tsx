@@ -16,27 +16,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('')
     setLoading(true)
 
-    // Validation cơ bản
     if (!username || !password) {
       setError('Vui lòng nhập tài khoản và mật khẩu.')
       setLoading(false)
       return
     }
 
-    // Kiểm tra tài khoản admin
     if (username !== 'admin' || password !== 'admin') {
       setError('Tài khoản hoặc mật khẩu không đúng.')
       setLoading(false)
       return
     }
 
-    // Mock API call - thay thế bằng API thực tế
     try {
-      // Mock delay
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      // Đăng nhập thành công với tài khoản admin
-      onLogin() // Chuyển sang dashboard
+      onLogin()
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.')
     } finally {

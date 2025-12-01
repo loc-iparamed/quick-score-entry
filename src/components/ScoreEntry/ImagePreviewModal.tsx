@@ -14,13 +14,11 @@ export const ImagePreviewModal = ({ isOpen, imageData, onClose }: ImagePreviewMo
 
   useEffect(() => {
     if (isOpen) {
-      // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'unset'
     }
 
-    // Cleanup function
     return () => {
       document.body.style.overflow = 'unset'
     }
@@ -53,7 +51,6 @@ export const ImagePreviewModal = ({ isOpen, imageData, onClose }: ImagePreviewMo
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >
       <div className='relative max-w-[95vw] max-h-[95vh] bg-gradient-to-br from-white via-slate-50/95 to-blue-50/80 rounded-2xl shadow-2xl border border-white/20 overflow-hidden backdrop-blur-sm animate-in zoom-in-95 duration-300'>
-        {/* Header */}
         <div className='flex items-center justify-between p-6 border-b border-slate-200/60 bg-gradient-to-r from-blue-50/80 to-indigo-50/60 backdrop-blur-sm'>
           <div className='flex items-center gap-4'>
             <h3 className='text-2xl font-bold text-slate-800'>Ảnh bài thi đã scan</h3>
@@ -63,7 +60,6 @@ export const ImagePreviewModal = ({ isOpen, imageData, onClose }: ImagePreviewMo
           </div>
 
           <div className='flex items-center gap-2'>
-            {/* Zoom controls */}
             <Button
               variant='outline'
               size='sm'
@@ -86,7 +82,6 @@ export const ImagePreviewModal = ({ isOpen, imageData, onClose }: ImagePreviewMo
               <ZoomIn className='h-4 w-4' />
             </Button>
 
-            {/* Download button */}
             <Button
               variant='outline'
               size='sm'
@@ -97,7 +92,6 @@ export const ImagePreviewModal = ({ isOpen, imageData, onClose }: ImagePreviewMo
               <Download className='h-4 w-4' />
             </Button>
 
-            {/* Close button */}
             <Button
               variant='outline'
               size='sm'
@@ -110,7 +104,6 @@ export const ImagePreviewModal = ({ isOpen, imageData, onClose }: ImagePreviewMo
           </div>
         </div>
 
-        {/* Image container */}
         <div className='p-6 bg-gradient-to-br from-white/80 to-slate-50/60 overflow-auto max-h-[80vh] flex items-center justify-center'>
           <img
             src={`data:image/jpeg;base64,${imageData}`}
@@ -124,7 +117,6 @@ export const ImagePreviewModal = ({ isOpen, imageData, onClose }: ImagePreviewMo
           />
         </div>
 
-        {/* Footer */}
         <div className='px-6 py-4 bg-gradient-to-r from-slate-50/80 to-slate-100/60 border-t border-slate-200/60 backdrop-blur-sm'>
           <div className='flex items-center justify-between text-sm text-slate-600'>
             <span>Click vào nền tối hoặc nút ✕ để đóng</span>

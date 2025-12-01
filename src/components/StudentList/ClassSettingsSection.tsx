@@ -49,7 +49,7 @@ const ClassSettingsSection: React.FC<ClassSettingsSectionProps> = ({
     } catch (error) {
       console.error('Error updating class name:', error)
       toast.error('Có lỗi xảy ra khi cập nhật tên lớp')
-      setNewClassName(currentClassName) // Reset to original name
+      setNewClassName(currentClassName)
     } finally {
       setIsUpdatingName(false)
     }
@@ -75,7 +75,7 @@ const ClassSettingsSection: React.FC<ClassSettingsSectionProps> = ({
         Cài đặt lớp học
       </h3>
 
-      {/* Class Name Settings */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-base'>
@@ -114,7 +114,7 @@ const ClassSettingsSection: React.FC<ClassSettingsSectionProps> = ({
         </CardContent>
       </Card>
 
-      {/* Dangerous Actions */}
+      {}
       <Card className='border-red-200'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-base text-red-700'>

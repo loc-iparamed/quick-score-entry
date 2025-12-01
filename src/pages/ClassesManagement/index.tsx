@@ -33,7 +33,6 @@ const ClassesManagement: React.FC = () => {
     teacherId: '',
   })
 
-  // Load data
   const loadData = async () => {
     try {
       setLoading(true)
@@ -52,22 +51,18 @@ const ClassesManagement: React.FC = () => {
     loadData()
   }, [])
 
-  // Get teacher name by ID
   const getTeacherName = (teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId)
     return teacher ? teacher.fullName : 'Không rõ'
   }
 
-  // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     try {
       if (editingClass) {
-        // Update existing class
         await classService.update(editingClass.id, formData)
       } else {
-        // Create new class
         await classService.create(formData)
       }
 
@@ -80,7 +75,6 @@ const ClassesManagement: React.FC = () => {
     }
   }
 
-  // Handle edit
   const handleEdit = (classItem: Class) => {
     setEditingClass(classItem)
     setFormData({
@@ -91,7 +85,6 @@ const ClassesManagement: React.FC = () => {
     setIsDialogOpen(true)
   }
 
-  // Handle delete
   const handleDelete = async (classItem: Class) => {
     if (!confirm(`Bạn có chắc muốn xóa lớp học "${classItem.name}"?`)) {
       return
@@ -106,13 +99,11 @@ const ClassesManagement: React.FC = () => {
     }
   }
 
-  // Reset form
   const resetForm = () => {
     setFormData({ name: '', semester: '', teacherId: '' })
     setEditingClass(null)
   }
 
-  // Handle dialog close
   const handleDialogClose = () => {
     setIsDialogOpen(false)
     resetForm()

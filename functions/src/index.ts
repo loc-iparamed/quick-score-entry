@@ -1,80 +1,78 @@
-// Import các thư viện cần thiết
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
 
-// Khởi tạo Firebase Admin SDK một lần duy nhất
-// Mã này có quyền truy cập cao nhất vào Firebase của bạn
 admin.initializeApp()
 const db = admin.firestore()
 
-/**
- * ===================================================================
- * ĐỊNH NGHĨA CÁC KIỂU DỮ LIỆU (TYPESCRIPT)
- * ===================================================================
- * Giúp code của bạn an toàn hơn bằng cách định nghĩa
- * cấu trúc dữ liệu mà chúng ta mong đợi từ LLM.
- */
+type RealtimeScanResultPayload = {
+  fullName?: string
+  studentId?: string
+  score?: number
+  timestamp?: string
+  source?: string
+  lastModified?: string
+  image_data?: string | null
+  clarity?: number
+  spacing?: number
+  straightness?: number
+}
 
 interface UpdateScoreArgs {
-  studentName: string // Tên sinh viên, ví dụ: "Nguyễn Văn A"
-  examName: string // Tên bài thi, ví dụ: "Giữa Kỳ"
-  newScore: number // Điểm số mới, ví dụ: 8.5
+  studentName: string
+  examName: string
+  newScore: number
 }
 
 interface GetStudentInfoArgs {
-  studentName: string // Tên sinh viên, ví dụ: "Nguyễn Văn A"
-  // Bạn có thể mở rộng thêm mssv nếu LLM có thể bóc tách
+  studentName: string
 }
 
-/**
- * ===================================================================
- * HÀM AGENT CHÍNH (HTTP ENDPOINT)
- * ===================================================================
- * Đây là "Agent" sẽ lắng nghe các yêu cầu HTTP từ máy chủ XiaoZhi AI.
- * Nó sẽ được deploy lên một URL công khai.
- */
-export const xiaozhiAgent = functions.https.onRequest(async (req, res) => {
-  // ---------------------------------------------------------------
-  // BƯỚC 1: BẢO MẬT (RẤT QUAN TRỌNG!)
-  // ---------------------------------------------------------------
-  // Chúng ta yêu cầu máy chủ XiaoZhi AI gửi một "Khóa Bí Mật"
-  // trong Header để đảm bảo chỉ nó mới có quyền gọi hàm này.
+interface CreateScanResultArgs {
+  studentName: string
+  mssv: string
+  score: number
+  clarity?: number
+  spacing?: number
+  straightness?: number
+}
 
-  // !!! HÃY THAY ĐỔI CHUỖI NÀY THÀNH MỘT KHÓA BÍ MẬT CỦA RIÊNG BẠN !!!
+interface UpdateScanResultArgs {
+  id: string
+  studentName?: string
+  mssv?: string
+  score?: number
+  clarity?: number
+  spacing?: number
+  straightness?: number
+}
+
+interface DeleteScanResultArgs {
+  id: string
+}
+
+export const xiaozhiAgent = functions.https.onRequest(async (req, res) => {
   const MY_SECRET_KEY = '324sadasd-fdg4-23r4-f34g-2345g34fdg34'
 
-  // Kiểm tra xem header "Authorization" có chứa khóa bí mật không
   if (req.headers.authorization !== `Bearer ${MY_SECRET_KEY}`) {
     console.warn('Cuộc gọi không hợp lệ! Khóa bí mật không đúng hoặc bị thiếu.')
-    // Trả về lỗi 403 (Forbidden)
+
     res.status(403).send({ speech: 'Lỗi bảo mật: Bạn không được phép truy cập.' })
     return
   }
 
-  // ---------------------------------------------------------------
-  // BƯỚC 2: PHÂN TÍCH YÊU CẦU
-  // ---------------------------------------------------------------
-  // Lấy tên hàm và các đối số mà LLM đã bóc tách
   const { functionName, args } = req.body
 
-  // Kiểm tra xem có đủ thông tin không
   if (!functionName || !args) {
     console.error('Yêu cầu không đầy đủ:', req.body)
     res.status(400).send({ speech: 'Lỗi: Yêu cầu không rõ ràng hoặc thiếu đối số.' })
     return
   }
 
-  // ---------------------------------------------------------------
-  // BƯỚC 3: BỘ ĐỊNH TUYẾN (Router)
-  // ---------------------------------------------------------------
-  // Quyết định hành động (gọi hàm nghiệp vụ nào)
-  // dựa trên "functionName" mà LLM gửi đến.
   try {
-    let speechResponse = '' // Chuỗi văn bản mà AI sẽ nói lại
+    let speechResponse = ''
 
     switch (functionName) {
       case 'updateStudentScore': {
-        // Ép kiểu (cast) các đối số về kiểu UpdateScoreArgs
         const { studentName, examName, newScore } = args as UpdateScoreArgs
         speechResponse = await handleUpdateScore(studentName, examName, newScore)
         break
@@ -86,26 +84,25 @@ export const xiaozhiAgent = functions.https.onRequest(async (req, res) => {
         break
       }
 
-      // === CÁC CHỨC NĂNG CHO REALTIME DATABASE (CRUD ĐẦY ĐỦ) ===
       case 'getScanResults': {
         speechResponse = await handleGetScanResults()
         break
       }
 
       case 'createScanResult': {
-        const { studentName, mssv, score } = args as any
-        speechResponse = await handleCreateScanResult(studentName, mssv, score)
+        const { studentName, mssv, score, clarity, spacing, straightness } = args as CreateScanResultArgs
+        speechResponse = await handleCreateScanResult(studentName, mssv, score, clarity, spacing, straightness)
         break
       }
 
       case 'updateScanResult': {
-        const { id, studentName, mssv, score } = args as any
-        speechResponse = await handleUpdateScanResult(id, studentName, mssv, score)
+        const { id, studentName, mssv, score, clarity, spacing, straightness } = args as UpdateScanResultArgs
+        speechResponse = await handleUpdateScanResult(id, studentName, mssv, score, clarity, spacing, straightness)
         break
       }
 
       case 'deleteScanResult': {
-        const { id } = args as any
+        const { id } = args as DeleteScanResultArgs
         speechResponse = await handleDeleteScanResult(id)
         break
       }
@@ -115,63 +112,31 @@ export const xiaozhiAgent = functions.https.onRequest(async (req, res) => {
         break
       }
 
-      // TODO: Thêm các case khác ở đây
-      // ví dụ: case "getExamStatistics": ...
-
       default:
         speechResponse = `Xin lỗi, tôi không hỗ trợ chức năng có tên là ${functionName}.`
     }
 
-    // ---------------------------------------------------------------
-    // BƯỚC 5: GỬI PHẢN HỒI THÀNH CÔNG
-    // ---------------------------------------------------------------
-    // Gửi phản hồi (văn bản) về cho máy chủ XiaoZhi.
-    // Máy chủ sẽ dùng TTS để chuyển thành âm thanh.
     console.log('Phản hồi thành công:', speechResponse)
     res.status(200).send({ speech: speechResponse })
-  } catch (error) {
-    // Xử lý nếu có lỗi nghiêm trọng xảy ra
+  } catch (error: unknown) {
     console.error('Lỗi nghiêm trọng trong Bộ định tuyến:', error)
     res.status(500).send({ speech: 'Đã có lỗi xảy ra phía máy chủ, vui lòng thử lại.' })
   }
 })
 
-/**
- * ===================================================================
- * HÀM NGHIỆP VỤ (Business Logic)
- * ===================================================================
- * Đây là nơi bạn viết logic để tương tác với Firestore.
- * Các hàm này được gọi bởi "Bộ định tuyến" ở trên.
- */
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
 
-/**
- * HÀM NGHIỆP VỤ 1: Cập nhật điểm số (CHỈ CHO SINH VIÊN ĐÃ TỒN TẠI)
- *
- * *** CHÍNH SÁCH BẢO MẬT ***
- * - KHÔNG được tạo sinh viên mới trong Firestore
- * - CHỈ được cập nhật điểm cho sinh viên đã có sẵn
- * - Firestore là dữ liệu nhạy cảm, chỉ READ-ONLY cho sinh viên
- *
- * *** CẤU TRÚC DATABASE THỰC TẾ ***
- * 1. Collection `students`: { id, mssv, fullName, email } - READ ONLY
- * 2. Collection `classes`: { id, name, semester, teacherId }
- * 3. Collection `enrollments`: { id, classId, studentId } - READ ONLY
- * 4. Collection `exams`: { id, classId, name, date, maxScore }
- * 5. Collection `submissions`: { id, examId, classId, studentId, score } - CHỈ CẬP NHẬT ĐIỂM
- */
 async function handleUpdateScore(studentName: string, examName: string, newScore: number): Promise<string> {
-  // Kiểm tra đầu vào
   if (!studentName || !examName || newScore === undefined) {
     return 'Yêu cầu cập nhật điểm không đầy đủ. Tôi cần tên sinh viên, tên bài thi, và điểm số.'
   }
 
-  // Kiểm tra điểm số hợp lệ
   if (newScore < 0 || newScore > 10) {
     return 'Điểm số phải trong khoảng từ 0 đến 10.'
   }
 
-  // KIỂM TRA CỤM TỪ KHÓA BẮT BUỘC CHO FIRESTORE
-  // Chỉ cho phép cập nhật Firestore khi có cụm từ "trong cơ sở dữ liệu"
   const hasKeyword =
     studentName.toLowerCase().includes('trong cơ sở dữ liệu') ||
     examName.toLowerCase().includes('trong cơ sở dữ liệu') ||
@@ -188,7 +153,6 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
     )
   }
 
-  // Loại bỏ cụm từ khóa để lấy tên thực
   const actualStudentName = studentName
     .replace(/trong cơ sở dữ liệu/gi, '')
     .replace(/database/gi, '')
@@ -202,7 +166,6 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
     .trim()
 
   try {
-    // 1. Tìm sinh viên theo fullName (CHỈ ĐỌC FIRESTORE)
     const studentQuery = await db.collection('students').where('fullName', '==', actualStudentName).limit(1).get()
 
     if (studentQuery.empty) {
@@ -213,17 +176,14 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
     const studentData = studentDoc.data()
     const studentId = studentDoc.id
 
-    // 2. Kiểm tra sinh viên có đăng ký lớp học không (CHỈ ĐỌC)
     const enrollmentQuery = await db.collection('enrollments').where('studentId', '==', studentId).get()
 
     if (enrollmentQuery.empty) {
       return `Sinh viên ${actualStudentName} (${studentData.mssv}) chưa được đăng ký vào lớp học nào trong cơ sở dữ liệu.`
     }
 
-    // Lấy danh sách classId mà sinh viên tham gia
     const classIds = enrollmentQuery.docs.map(doc => doc.data().classId)
 
-    // 3. Tìm bài thi trong các lớp học của sinh viên (CHỈ ĐỌC)
     let examDoc = null
     let examClassId = null
 
@@ -243,7 +203,6 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
     }
 
     if (!examDoc) {
-      // Debug: Lấy danh sách bài thi trong các lớp của sinh viên
       let debugInfo = 'Các bài thi có sẵn trong cơ sở dữ liệu: '
       for (const classId of classIds) {
         const examsInClass = await db.collection('exams').where('classId', '==', classId).limit(3).get()
@@ -256,7 +215,6 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
 
     const examId = examDoc.id
 
-    // 4. Cập nhật hoặc tạo submission (CHỈ THAO TÁC DUY NHẤT ĐƯỢC PHÉP)
     const submissionQuery = await db
       .collection('submissions')
       .where('examId', '==', examId)
@@ -265,7 +223,6 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
       .get()
 
     if (!submissionQuery.empty) {
-      // Cập nhật submission đã có
       const submissionDoc = submissionQuery.docs[0]
       const oldScore = submissionDoc.data().score || 0
 
@@ -285,7 +242,6 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
         `🔒 Dữ liệu đã được lưu vào Firestore Database.`
       )
     } else {
-      // Tạo submission mới (chỉ cho sinh viên đã tồn tại)
       await db.collection('submissions').add({
         examId: examId,
         classId: examClassId,
@@ -307,27 +263,18 @@ async function handleUpdateScore(studentName: string, examName: string, newScore
         `🔒 Dữ liệu đã được lưu vào Firestore Database.`
       )
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi trong handleUpdateScore:', err)
-    return `Đã xảy ra lỗi khi cập nhật điểm trong cơ sở dữ liệu: ${err.message}.`
+    const msg = getErrorMessage(err)
+    return `Đã xảy ra lỗi khi cập nhật điểm trong cơ sở dữ liệu: ${msg}.`
   }
 }
 
-/**
- * HÀM NGHIỆP VỤ 2: Lấy thông tin và điểm của sinh viên (CHỈ KHI CÓ CỤM TỪ KHÓA)
- *
- * *** CHÍNH SÁCH PHÂN BIỆT NGUỒN DỮ LIỆU ***
- * - Realtime Database: CRUD đầy đủ khi dùng trang ScoreEntry
- * - Firestore Database: CHỈ GET khi nói thêm "trong cơ sở dữ liệu"
- */
 async function handleGetStudentInfo(studentName: string): Promise<string> {
-  // Nếu không có tên sinh viên cụ thể, kiểm tra có yêu cầu danh sách không
   if (!studentName || studentName.trim() === '') {
     return 'Tôi cần tên sinh viên cụ thể để tra cứu. Ví dụ: "Nguyễn Văn A trong cơ sở dữ liệu"'
   }
 
-  // KIỂM TRA CỤM TỪ KHÓA BẮT BUỘC
-  // Chỉ cho phép truy cập Firestore khi có cụm từ "trong cơ sở dữ liệu"
   const hasKeyword =
     studentName.toLowerCase().includes('trong cơ sở dữ liệu') ||
     studentName.toLowerCase().includes('database') ||
@@ -342,7 +289,6 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
     )
   }
 
-  // Loại bỏ cụm từ khóa để lấy tên sinh viên thực
   const actualStudentName = studentName
     .replace(/trong cơ sở dữ liệu/gi, '')
     .replace(/database/gi, '')
@@ -354,16 +300,13 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
     .trim()
 
   try {
-    // Nếu không có tên cụ thể sau khi loại bỏ từ khóa, trả về danh sách
     if (!actualStudentName || actualStudentName === '') {
       return await getAllStudentsList()
     }
 
-    // 1. Tìm sinh viên theo fullName (CHỈ ĐỌC FIRESTORE)
     const studentQuery = await db.collection('students').where('fullName', '==', actualStudentName).limit(1).get()
 
     if (studentQuery.empty) {
-      // Thử tìm kiếm partial match
       const allStudents = await db.collection('students').limit(20).get()
       const matchedStudents = allStudents.docs.filter(doc => {
         const data = doc.data()
@@ -380,7 +323,6 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
         return response
       }
 
-      // Nếu không tìm thấy, hiển thị danh sách để debug
       return await getAllStudentsList()
     }
 
@@ -388,7 +330,6 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
     const studentData = studentDoc.data()
     const studentId = studentDoc.id
 
-    // 2. Lấy danh sách lớp học của sinh viên
     const enrollmentQuery = await db.collection('enrollments').where('studentId', '==', studentId).get()
 
     if (enrollmentQuery.empty) {
@@ -397,7 +338,6 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
 
     const classIds = enrollmentQuery.docs.map(doc => doc.data().classId)
 
-    // 3. Lấy tên các lớp học
     const classNames = []
     for (const classId of classIds) {
       const classDoc = await db.collection('classes').doc(classId).get()
@@ -407,24 +347,20 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
       }
     }
 
-    // 4. Lấy tất cả điểm của sinh viên trong các lớp
     const submissionsQuery = await db.collection('submissions').where('studentId', '==', studentId).get()
 
     if (submissionsQuery.empty) {
       return `Sinh viên ${studentName}, mã số ${studentData.mssv}, đang học ${classNames.join(', ')} nhưng chưa có điểm nào.`
     }
 
-    // 5. Lấy thông tin chi tiết về điểm và bài thi
     const scoreDetails = []
     for (const submissionDoc of submissionsQuery.docs) {
       const submission = submissionDoc.data()
 
-      // Lấy thông tin bài thi
       const examDoc = await db.collection('exams').doc(submission.examId).get()
       if (examDoc.exists) {
         const examData = examDoc.data()
 
-        // Lấy thông tin lớp học
         const classDoc = await db.collection('classes').doc(submission.classId).get()
         const className = classDoc.exists ? classDoc.data()?.name : 'Unknown'
 
@@ -437,7 +373,6 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
       }
     }
 
-    // 6. Tạo câu trả lời với thông tin từ Firestore
     let response =
       `📊 THÔNG TIN TỪ CƠ SỞ DỮ LIỆU FIRESTORE:\n\n` +
       `👤 Sinh viên: ${actualStudentName}\n` +
@@ -456,23 +391,13 @@ async function handleGetStudentInfo(studentName: string): Promise<string> {
     response += `\n\n🔒 Dữ liệu từ Firestore Database (chỉ đọc).`
 
     return response
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi trong handleGetStudentInfo:', err)
-    return `Đã xảy ra lỗi khi tra cứu thông tin trong cơ sở dữ liệu: ${err.message}.`
+    const msg = getErrorMessage(err)
+    return `Đã xảy ra lỗi khi tra cứu thông tin trong cơ sở dữ liệu: ${msg}.`
   }
 }
 
-/**
- * ===================================================================
- * HÀM XỬ LÝ REALTIME DATABASE - CRUD ĐẦY ĐỦ CHO TRANG SCOREENTRY
- * ===================================================================
- * Các hàm này cho phép thao tác đầy đủ với dữ liệu scan tạm thời
- * trong Realtime Database khi sử dụng trang ScoreEntry
- */
-
-/**
- * Lấy tất cả kết quả scan từ Realtime Database
- */
 async function handleGetScanResults(): Promise<string> {
   try {
     const realtimeDB = admin.database()
@@ -499,16 +424,21 @@ async function handleGetScanResults(): Promise<string> {
     response += '🔄 Dữ liệu từ Realtime Database (có thể chỉnh sửa tự do).'
 
     return response
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi khi lấy scan results:', err)
-    return `Lỗi khi lấy dữ liệu scan: ${err.message}`
+    const msg = getErrorMessage(err)
+    return `Lỗi khi lấy dữ liệu scan: ${msg}`
   }
 }
 
-/**
- * Tạo mới kết quả scan trong Realtime Database
- */
-async function handleCreateScanResult(studentName: string, mssv: string, score: number): Promise<string> {
+async function handleCreateScanResult(
+  studentName: string,
+  mssv: string,
+  score: number,
+  clarity?: number,
+  spacing?: number,
+  straightness?: number,
+): Promise<string> {
   if (!studentName || !mssv || score === undefined) {
     return 'Thiếu thông tin: Cần tên sinh viên, MSSV và điểm số để tạo kết quả scan.'
   }
@@ -521,13 +451,19 @@ async function handleCreateScanResult(studentName: string, mssv: string, score: 
     const realtimeDB = admin.database()
     const newId = `${Date.now()}_${mssv}`
 
-    await realtimeDB.ref(`exam_results/${newId}`).set({
+    const payload: RealtimeScanResultPayload = {
       fullName: studentName,
       studentId: mssv,
       score: score,
       timestamp: new Date().toISOString(),
       source: 'xiaozhi_ai_manual',
-    })
+    }
+
+    if (clarity !== undefined) payload.clarity = clarity
+    if (spacing !== undefined) payload.spacing = spacing
+    if (straightness !== undefined) payload.straightness = straightness
+
+    await realtimeDB.ref(`exam_results/${newId}`).set(payload)
 
     return (
       `✅ ĐÃ TẠO KẾT QUẢ SCAN MỚI:\n\n` +
@@ -538,20 +474,21 @@ async function handleCreateScanResult(studentName: string, mssv: string, score: 
       `📱 ID: ${newId}\n\n` +
       `🔄 Dữ liệu đã được lưu vào Realtime Database.`
     )
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi khi tạo scan result:', err)
-    return `Lỗi khi tạo kết quả scan: ${err.message}`
+    const msg = getErrorMessage(err)
+    return `Lỗi khi tạo kết quả scan: ${msg}`
   }
 }
 
-/**
- * Cập nhật kết quả scan trong Realtime Database
- */
 async function handleUpdateScanResult(
   id: string,
   studentName?: string,
   mssv?: string,
   score?: number,
+  clarity?: number,
+  spacing?: number,
+  straightness?: number,
 ): Promise<string> {
   if (!id) {
     return 'Thiếu ID kết quả scan cần cập nhật.'
@@ -561,13 +498,13 @@ async function handleUpdateScanResult(
     const realtimeDB = admin.database()
     const ref = realtimeDB.ref(`exam_results/${id}`)
 
-    // Kiểm tra tồn tại
     const snapshot = await ref.once('value')
     if (!snapshot.exists()) {
       return `Không tìm thấy kết quả scan với ID: ${id}`
     }
 
-    const updates: any = {}
+    type RealtimeScanResultUpdates = Partial<RealtimeScanResultPayload & { lastModified?: string }>
+    const updates: RealtimeScanResultUpdates = {}
 
     if (studentName) updates.fullName = studentName
     if (mssv) updates.studentId = mssv
@@ -576,6 +513,24 @@ async function handleUpdateScanResult(
         return 'Điểm số phải trong khoảng 0-10.'
       }
       updates.score = score
+    }
+    if (clarity !== undefined) {
+      if (clarity < 0 || clarity > 10) {
+        return 'Điểm nét viết phải trong khoảng 0-10.'
+      }
+      updates.clarity = clarity
+    }
+    if (spacing !== undefined) {
+      if (spacing < 0 || spacing > 10) {
+        return 'Điểm khoảng cách phải trong khoảng 0-10.'
+      }
+      updates.spacing = spacing
+    }
+    if (straightness !== undefined) {
+      if (straightness < 0 || straightness > 10) {
+        return 'Điểm thẳng hàng phải trong khoảng 0-10.'
+      }
+      updates.straightness = straightness
     }
 
     if (Object.keys(updates).length === 0) {
@@ -597,15 +552,13 @@ async function handleUpdateScanResult(
       `⏰ Cập nhật: ${new Date().toLocaleString('vi-VN')}\n\n` +
       `🔄 Dữ liệu đã được cập nhật trong Realtime Database.`
     )
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi khi cập nhật scan result:', err)
-    return `Lỗi khi cập nhật kết quả scan: ${err.message}`
+    const msg = getErrorMessage(err)
+    return `Lỗi khi cập nhật kết quả scan: ${msg}`
   }
 }
 
-/**
- * Xóa kết quả scan trong Realtime Database
- */
 async function handleDeleteScanResult(id: string): Promise<string> {
   if (!id) {
     return 'Thiếu ID kết quả scan cần xóa.'
@@ -615,7 +568,6 @@ async function handleDeleteScanResult(id: string): Promise<string> {
     const realtimeDB = admin.database()
     const ref = realtimeDB.ref(`exam_results/${id}`)
 
-    // Kiểm tra tồn tại
     const snapshot = await ref.once('value')
     if (!snapshot.exists()) {
       return `Không tìm thấy kết quả scan với ID: ${id}`
@@ -633,15 +585,13 @@ async function handleDeleteScanResult(id: string): Promise<string> {
       `⏰ Xóa lúc: ${new Date().toLocaleString('vi-VN')}\n\n` +
       `🗑️ Dữ liệu đã được xóa khỏi Realtime Database.`
     )
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi khi xóa scan result:', err)
-    return `Lỗi khi xóa kết quả scan: ${err.message}`
+    const msg = getErrorMessage(err)
+    return `Lỗi khi xóa kết quả scan: ${msg}`
   }
 }
 
-/**
- * Xóa tất cả kết quả scan trong Realtime Database
- */
 async function handleClearAllScanResults(): Promise<string> {
   try {
     const realtimeDB = admin.database()
@@ -661,15 +611,13 @@ async function handleClearAllScanResults(): Promise<string> {
       `🗑️ Tất cả dữ liệu scan đã được xóa khỏi Realtime Database.\n` +
       `💡 Sẵn sàng cho batch scan mới.`
     )
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi khi xóa tất cả scan results:', err)
-    return `Lỗi khi xóa tất cả kết quả scan: ${err.message}`
+    const msg = getErrorMessage(err)
+    return `Lỗi khi xóa tất cả kết quả scan: ${msg}`
   }
 }
 
-/**
- * HÀM HỖ TRỢ: Lấy danh sách tất cả sinh viên trong Firestore
- */
 async function getAllStudentsList(): Promise<string> {
   try {
     const studentsQuery = await db.collection('students').limit(20).get()
@@ -692,8 +640,9 @@ async function getAllStudentsList(): Promise<string> {
     response += `🔒 Dữ liệu từ Firestore Database (chỉ đọc).`
 
     return response
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Lỗi khi lấy danh sách sinh viên:', err)
-    return `Lỗi khi lấy danh sách sinh viên: ${err.message}`
+    const msg = getErrorMessage(err)
+    return `Lỗi khi lấy danh sách sinh viên: ${msg}`
   }
 }

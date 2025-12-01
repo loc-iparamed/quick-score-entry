@@ -37,7 +37,6 @@ import { userService, classService, studentService, enrollmentService } from '@/
 import type { User, Class, Student, CreateUserData, CreateClassData, CreateStudentData, Enrollment } from '@/types'
 
 const Management: React.FC = () => {
-  // State for all entities
   const [teachers, setTeachers] = useState<User[]>([])
   const [classes, setClasses] = useState<Class[]>([])
   const [students, setStudents] = useState<Student[]>([])
@@ -47,7 +46,6 @@ const Management: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSemester, setSelectedSemester] = useState<string>('all')
 
-  // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTeacher, setEditingTeacher] = useState<User | null>(null)
   const [editingClass, setEditingClass] = useState<Class | null>(null)
@@ -56,7 +54,6 @@ const Management: React.FC = () => {
   const [selectedClassForEnrollment, setSelectedClassForEnrollment] = useState<Class | null>(null)
   const [selectedStudentForEnrollment, setSelectedStudentForEnrollment] = useState<Student | null>(null)
 
-  // Form data states
   const [teacherFormData, setTeacherFormData] = useState<CreateUserData>({
     fullName: '',
     email: '',
@@ -75,7 +72,6 @@ const Management: React.FC = () => {
     email: '',
   })
 
-  // Load all data
   const loadAllData = async () => {
     try {
       setLoading(true)
@@ -101,13 +97,11 @@ const Management: React.FC = () => {
     loadAllData()
   }, [])
 
-  // Get teacher name by ID
   const getTeacherName = (teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId)
     return teacher ? teacher.fullName : 'Không rõ'
   }
 
-  // Get enrolled students for a class
   const getEnrolledStudents = (classId: string) => {
     return enrollments
       .filter(e => e.classId === classId)
@@ -115,7 +109,6 @@ const Management: React.FC = () => {
       .filter(Boolean) as Student[]
   }
 
-  // Get enrolled classes for a student
   const getEnrolledClasses = (studentId: string) => {
     return enrollments
       .filter(e => e.studentId === studentId)
@@ -123,12 +116,10 @@ const Management: React.FC = () => {
       .filter(Boolean) as Class[]
   }
 
-  // Check if student is enrolled in class
   const isStudentEnrolled = (studentId: string, classId: string) => {
     return enrollments.some(e => e.studentId === studentId && e.classId === classId)
   }
 
-  // Get initials for avatar
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -137,7 +128,6 @@ const Management: React.FC = () => {
       .toUpperCase()
   }
 
-  // Filter functions
   const filteredTeachers = teachers.filter(
     teacher =>
       teacher.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -159,7 +149,6 @@ const Management: React.FC = () => {
       student.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Handle form submits
   const handleTeacherSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -200,7 +189,6 @@ const Management: React.FC = () => {
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Auto-generate email from MSSV if not provided
       const emailToUse = studentFormData.email || `${studentFormData.mssv}@student.tdtu.edu.vn`
 
       if (!editingStudent) {
@@ -226,7 +214,6 @@ const Management: React.FC = () => {
       setIsDialogOpen(false)
       setError(null)
 
-      // Notify Dashboard to reload data
       window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       setError(editingStudent ? 'Không thể cập nhật sinh viên' : 'Không thể tạo sinh viên')
@@ -234,7 +221,6 @@ const Management: React.FC = () => {
     }
   }
 
-  // Handle edit actions
   const handleEditTeacher = (teacher: User) => {
     setEditingTeacher(teacher)
     setTeacherFormData({
@@ -268,7 +254,6 @@ const Management: React.FC = () => {
     setIsDialogOpen(true)
   }
 
-  // Handle delete actions
   const handleDeleteTeacher = async (teacher: User) => {
     if (!confirm(`Bạn có chắc muốn xóa giảng viên "${teacher.fullName}"?`)) return
     try {
@@ -297,7 +282,6 @@ const Management: React.FC = () => {
       await studentService.delete(student.id)
       await loadAllData()
 
-      // Notify Dashboard to reload data
       window.dispatchEvent(new CustomEvent('studentDataChanged'))
     } catch (err) {
       setError('Không thể xóa sinh viên')
@@ -305,7 +289,6 @@ const Management: React.FC = () => {
     }
   }
 
-  // Reset form functions
   const resetTeacherForm = () => {
     setTeacherFormData({ fullName: '', email: '', role: 'teacher' })
     setEditingTeacher(null)
@@ -321,7 +304,6 @@ const Management: React.FC = () => {
     setEditingStudent(null)
   }
 
-  // Handle dialog close
   const handleDialogClose = () => {
     setIsDialogOpen(false)
     resetTeacherForm()
@@ -329,7 +311,6 @@ const Management: React.FC = () => {
     resetStudentForm()
   }
 
-  // Handle enrollment operations
   const handleEnrollStudent = async (studentId: string, classId: string) => {
     try {
       await enrollmentService.create({ studentId, classId })
@@ -352,7 +333,6 @@ const Management: React.FC = () => {
     }
   }
 
-  // Get unique semesters for filter
   const semesters = Array.from(new Set(classes.map(c => c.semester))).sort()
 
   if (loading) {
@@ -365,7 +345,7 @@ const Management: React.FC = () => {
 
   return (
     <div className='container mx-auto py-8 px-4 max-w-7xl'>
-      {/* Go Back Button */}
+      {}
       <div className='mb-6'>
         <Link to='/'>
           <Button variant='outline' className='flex items-center gap-2 hover:bg-gray-50'>
@@ -375,7 +355,7 @@ const Management: React.FC = () => {
         </Link>
       </div>
 
-      {/* Header */}
+      {}
       <div className='mb-8'>
         <div className='flex items-center justify-between mb-6'>
           <div>
@@ -397,7 +377,7 @@ const Management: React.FC = () => {
           </div>
         </div>
 
-        {/* Statistics Cards */}
+        {}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
           <Card className='bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300'>
             <CardContent className='p-6'>
@@ -440,14 +420,14 @@ const Management: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Alert */}
+      {}
       {error && (
         <Alert className='mb-6 border-red-200 bg-red-50'>
           <AlertDescription className='text-red-800'>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Main Tabs */}
+      {}
       <Tabs value={currentTab} onValueChange={setCurrentTab} className='space-y-6'>
         <TabsList className='grid w-full grid-cols-3 bg-muted/50 p-1'>
           <TabsTrigger
@@ -473,7 +453,7 @@ const Management: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Teachers Tab */}
+        {}
         <TabsContent value='teachers' className='space-y-6'>
           <Card className='border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50'>
             <CardHeader>
@@ -627,7 +607,7 @@ const Management: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Classes Tab */}
+        {}
         <TabsContent value='classes' className='space-y-6'>
           <Card className='border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-teal-50'>
             <CardHeader>
@@ -830,7 +810,7 @@ const Management: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Enrollment Dialog for Classes */}
+        {}
         <Dialog open={!!selectedClassForEnrollment} onOpenChange={() => setSelectedClassForEnrollment(null)}>
           <DialogContent className='sm:max-w-2xl max-h-[80vh] overflow-y-auto'>
             <DialogHeader>
@@ -842,7 +822,7 @@ const Management: React.FC = () => {
             </DialogHeader>
 
             <div className='space-y-4'>
-              {/* Enrolled Students */}
+              {}
               <div>
                 <h4 className='text-sm font-medium text-slate-700 mb-2'>
                   Sinh viên đã đăng ký ({getEnrolledStudents(selectedClassForEnrollment?.id || '').length})
@@ -882,7 +862,7 @@ const Management: React.FC = () => {
                 </div>
               </div>
 
-              {/* Add Student */}
+              {}
               <div>
                 <h4 className='text-sm font-medium text-slate-700 mb-2'>Thêm sinh viên</h4>
                 <div className='space-y-2'>
@@ -926,7 +906,7 @@ const Management: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Students Tab */}
+        {}
         <TabsContent value='students' className='space-y-6'>
           <Card className='border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50'>
             <CardHeader>
@@ -1104,7 +1084,7 @@ const Management: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Enrollment Dialog for Students */}
+        {}
         <Dialog open={!!selectedStudentForEnrollment} onOpenChange={() => setSelectedStudentForEnrollment(null)}>
           <DialogContent className='sm:max-w-2xl max-h-[80vh] overflow-y-auto'>
             <DialogHeader>
@@ -1116,7 +1096,7 @@ const Management: React.FC = () => {
             </DialogHeader>
 
             <div className='space-y-4'>
-              {/* Enrolled Classes */}
+              {}
               <div>
                 <h4 className='text-sm font-medium text-slate-700 mb-2'>
                   Lớp học đã đăng ký ({getEnrolledClasses(selectedStudentForEnrollment?.id || '').length})
@@ -1156,7 +1136,7 @@ const Management: React.FC = () => {
                 </div>
               </div>
 
-              {/* Add to Class */}
+              {}
               <div>
                 <h4 className='text-sm font-medium text-slate-700 mb-2'>Thêm vào lớp học</h4>
                 <div className='space-y-2'>

@@ -38,7 +38,6 @@ const StudentList: React.FC<StudentListProps> = ({
   onBack,
   onEnrollmentChange,
 }) => {
-  // Unified manage class dialog state
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
@@ -57,12 +56,10 @@ const StudentList: React.FC<StudentListProps> = ({
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
   const [exportMethod, setExportMethod] = useState<'average' | 'max'>('average')
 
-  // Helper function to check if a student is enrolled in this class
   const isStudentEnrolled = (studentId: string) => {
     return enrollments.some(e => e.studentId === studentId && e.classId === classInfo.id)
   }
 
-  // Get enrolled students for this class
   const getEnrolledStudents = () => {
     return enrollments
       .filter(e => e.classId === classInfo.id)
@@ -70,7 +67,6 @@ const StudentList: React.FC<StudentListProps> = ({
       .filter(Boolean) as Student[]
   }
 
-  // Get unenrolled students (available to enroll)
   const getUnenrolledStudents = () => {
     return allStudents.filter(student => !isStudentEnrolled(student.id))
   }
@@ -84,7 +80,6 @@ const StudentList: React.FC<StudentListProps> = ({
     setShowStudentResults(true)
   }
 
-  // Handle enrolling a student
   const handleEnrollStudent = async (studentId: string) => {
     try {
       setLoading(true)
@@ -92,7 +87,7 @@ const StudentList: React.FC<StudentListProps> = ({
         studentId,
         classId: classInfo.id,
       })
-      // Refresh data
+
       onEnrollmentChange?.()
     } catch (error) {
       console.error('Error enrolling student:', error)
@@ -102,7 +97,6 @@ const StudentList: React.FC<StudentListProps> = ({
     }
   }
 
-  // Handle unenrolling a student
   const handleUnenrollStudent = async (studentId: string) => {
     try {
       setLoading(true)
@@ -113,7 +107,7 @@ const StudentList: React.FC<StudentListProps> = ({
           setSelectedStudent(null)
           setStudentSubmissions([])
         }
-        // Refresh data
+
         onEnrollmentChange?.()
       }
     } catch (error) {
@@ -124,13 +118,11 @@ const StudentList: React.FC<StudentListProps> = ({
     }
   }
 
-  // Handle exam selection for management
   const handleExamSelect = async (exam: Exam) => {
     setSelectedExam(exam)
     setExamSubmissionsLoading(true)
 
     try {
-      // Get all submissions for this exam
       const submissions = await submissionService.getAll({ examId: exam.id })
       setExamSubmissions(submissions)
     } catch (error) {
@@ -141,13 +133,11 @@ const StudentList: React.FC<StudentListProps> = ({
     }
   }
 
-  // Handle back to exam list
   const handleBackToExamList = () => {
     setSelectedExam(null)
     setExamSubmissions([])
   }
 
-  // Execute export with selected aggregation method
   const performExport = async (useAverage: boolean) => {
     try {
       const DEFAULT_EXAM_NAMES = [
@@ -157,17 +147,14 @@ const StudentList: React.FC<StudentListProps> = ({
         'Bài kiểm tra cuối kỳ',
       ] as const
 
-      // Get all submissions for this class
       const classSubmissions = await submissionService.getAll({ classId: classInfo.id })
 
-      // Current enrolled students
       const students = getEnrolledStudents()
       if (students.length === 0) {
         toast.info('Lớp chưa có sinh viên để xuất bảng điểm')
         return
       }
 
-      // Map exam name -> list of exam ids (handle duplicates with same name)
       const nameToExamIds = new Map<string, string[]>()
       for (const e of Object.values(classExams)) {
         const list = nameToExamIds.get(e.name) ?? []
@@ -179,7 +166,6 @@ const StudentList: React.FC<StudentListProps> = ({
         const examIds = nameToExamIds.get(examName)
         if (!examIds || examIds.length === 0) return ''
 
-        // Collect all submissions for this student across all examIds with the same name
         const subs = classSubmissions.filter(s => s.studentId === studentId && examIds.includes(s.examId))
         const scores = subs
           .map(s => (typeof s.score === 'number' && !isNaN(s.score) ? s.score : null))
@@ -211,7 +197,6 @@ const StudentList: React.FC<StudentListProps> = ({
         const s3 = getScore(stu.id, DEFAULT_EXAM_NAMES[2])
         const s4 = getScore(stu.id, DEFAULT_EXAM_NAMES[3])
 
-        // Weighted final score: 0.1, 0.2, 0.2, 0.5 (missing -> 0)
         const n1 = s1 === '' ? 0 : Number(s1)
         const n2 = s2 === '' ? 0 : Number(s2)
         const n3 = s3 === '' ? 0 : Number(s3)
@@ -251,7 +236,6 @@ const StudentList: React.FC<StudentListProps> = ({
     }
   }
 
-  // Open the export dialog
   const handleExportGradeSheet = () => {
     setIsExportDialogOpen(true)
   }
@@ -316,13 +300,11 @@ const StudentList: React.FC<StudentListProps> = ({
       try {
         console.log('Fetching submissions for student:', selectedStudent.id, 'in class:', classInfo.id)
 
-        // Get all submissions for this student first (single where clause to avoid composite index requirement)
         const allStudentSubmissions = await submissionService.getAll({
           studentId: selectedStudent.id,
         })
         console.log('All submissions for student:', allStudentSubmissions.length, allStudentSubmissions)
 
-        // Filter by classId directly (more reliable than filtering by examId)
         const classSubmissions = allStudentSubmissions.filter(submission => submission.classId === classInfo.id)
         console.log('Filtered submissions for class:', classSubmissions.length, classSubmissions)
 
@@ -351,8 +333,6 @@ const StudentList: React.FC<StudentListProps> = ({
       setStudentSubmissions([])
       setSubmissionsLoading(false)
     }
-    // Class exams are already loaded when component mounts
-    // No need to fetch again
   }, [isManageDialogOpen])
 
   const formatDate = (timestamp?: Student['createdAt']) => {
@@ -385,7 +365,7 @@ const StudentList: React.FC<StudentListProps> = ({
 
   return (
     <div className='space-y-6 animate-fade-in-up'>
-      {/* Header */}
+      {}
       <Card className='border-0 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white animate-scale-in'>
         <CardHeader>
           <div className='flex items-center justify-between'>
@@ -433,7 +413,7 @@ const StudentList: React.FC<StudentListProps> = ({
                     <DialogTitle className='text-xl font-bold'>Quản lý lớp học - {classInfo.name}</DialogTitle>
                   </DialogHeader>
 
-                  {/* Section switcher */}
+                  {}
                   <div className='flex flex-wrap gap-2 mb-4'>
                     <Button
                       variant={activeSection === 'students' ? 'secondary' : 'outline'}
@@ -458,7 +438,7 @@ const StudentList: React.FC<StudentListProps> = ({
                     </Button>
                   </div>
 
-                  {/* Exams section */}
+                  {}
                   {activeSection === 'exams' && (
                     <div>
                       {!selectedExam ? (
@@ -603,7 +583,7 @@ const StudentList: React.FC<StudentListProps> = ({
                     </div>
                   )}
 
-                  {/* Settings section */}
+                  {}
                   {activeSection === 'settings' && (
                     <div className='space-y-4 py-4'>
                       <div className='space-y-2 max-w-xl'>
@@ -645,10 +625,10 @@ const StudentList: React.FC<StudentListProps> = ({
                             if (!confirmed) return
                             try {
                               setIsDeletingClass(true)
-                              // Delete all submissions by classId
+
                               const subs = await submissionService.getAll({ classId: classInfo.id })
                               await Promise.all(subs.map(s => submissionService.delete(s.id)))
-                              // Delete the class document
+
                               await classService.delete(classInfo.id)
                               onEnrollmentChange?.()
                               window.dispatchEvent(new CustomEvent('classDataChanged'))
@@ -670,7 +650,7 @@ const StudentList: React.FC<StudentListProps> = ({
                     </div>
                   )}
 
-                  {/* Students section */}
+                  {}
                   {activeSection === 'students' && (
                     <div className='space-y-6 py-4'>
                       <div>
@@ -838,7 +818,7 @@ const StudentList: React.FC<StudentListProps> = ({
                 </DialogContent>
               </Dialog>
 
-              {/* Export confirmation dialog */}
+              {}
               <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
                 <DialogContent className='sm:max-w-md bg-white'>
                   <DialogHeader>
@@ -889,7 +869,7 @@ const StudentList: React.FC<StudentListProps> = ({
         </CardHeader>
       </Card>
 
-      {/* Stats Cards */}
+      {}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
         <Card className='border-0 shadow-lg hover-lift animate-slide-in-right'>
           <CardContent className='p-6'>
@@ -934,7 +914,7 @@ const StudentList: React.FC<StudentListProps> = ({
         </Card>
       </div>
 
-      {/* Students Table */}
+      {}
       <Card className='border-0 shadow-lg animate-fade-in-up' style={{ animationDelay: '0.3s' }}>
         <CardHeader>
           <CardTitle className='text-xl font-bold text-slate-800'>Danh sách sinh viên</CardTitle>
@@ -986,7 +966,7 @@ const StudentList: React.FC<StudentListProps> = ({
         </CardContent>
       </Card>
 
-      {/* Student Results Section */}
+      {}
       {showStudentResults && selectedStudent && (
         <Card className='border-0 shadow-lg animate-fade-in-up' style={{ animationDelay: '0.4s' }}>
           <CardHeader>

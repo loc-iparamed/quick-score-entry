@@ -1,5 +1,3 @@
-/* Custom animations for the app */
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -69,7 +67,6 @@
   animation: bounce 2s infinite;
 }
 
-/* Hover effects */
 .hover-lift {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -81,7 +78,6 @@
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Gradient backgrounds */
 .bg-gradient-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
@@ -94,7 +90,6 @@
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-/* Loading states */
 .skeleton {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   background-color: #e2e8f0;
@@ -111,7 +106,6 @@
   }
 }
 
-/* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }

@@ -32,7 +32,6 @@ const ExportGradeDialog: React.FC<ExportGradeDialogProps> = ({
         'Bài kiểm tra cuối kỳ',
       ] as const
 
-      // Get all submissions for this class
       const classSubmissions = await submissionService.getAll({ classId: classInfo.id })
 
       if (students.length === 0) {
@@ -40,7 +39,6 @@ const ExportGradeDialog: React.FC<ExportGradeDialogProps> = ({
         return
       }
 
-      // Map exam name -> list of exam ids (handle duplicates with same name)
       const nameToExamIds = new Map<string, string[]>()
       for (const e of Object.values(classExams)) {
         const list = nameToExamIds.get(e.name) ?? []
@@ -52,7 +50,6 @@ const ExportGradeDialog: React.FC<ExportGradeDialogProps> = ({
         const examIds = nameToExamIds.get(examName)
         if (!examIds || examIds.length === 0) return ''
 
-        // Collect all submissions for this student across all examIds with the same name
         const subs = classSubmissions.filter(s => s.studentId === studentId && examIds.includes(s.examId))
         const scores = subs
           .map(s => (typeof s.score === 'number' && !isNaN(s.score) ? s.score : null))
@@ -84,7 +81,6 @@ const ExportGradeDialog: React.FC<ExportGradeDialogProps> = ({
         const s3 = getScore(stu.id, DEFAULT_EXAM_NAMES[2])
         const s4 = getScore(stu.id, DEFAULT_EXAM_NAMES[3])
 
-        // Weighted final score: 0.1, 0.2, 0.2, 0.5 (missing -> 0)
         const n1 = s1 === '' ? 0 : Number(s1)
         const n2 = s2 === '' ? 0 : Number(s2)
         const n3 = s3 === '' ? 0 : Number(s3)

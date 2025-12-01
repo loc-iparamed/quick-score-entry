@@ -25,7 +25,6 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess }) => {
     setError('')
     setLoading(true)
 
-    // Validation cơ bản
     if (!email || !password || !confirmPassword) {
       setError('Vui lòng điền đầy đủ thông tin.')
       setLoading(false)
@@ -45,7 +44,6 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess }) => {
     }
 
     try {
-      // Tạo tài khoản mới với Firebase Auth
       await createUserWithEmailAndPassword(auth, email, password)
       if (onRegisterSuccess) {
         onRegisterSuccess()
